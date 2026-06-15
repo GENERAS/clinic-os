@@ -12,7 +12,8 @@ import {
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clinics", label: "Clinics", icon: Building2 },
-  { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
+  { href: "/admin/payments", label: "Payments", icon: CreditCard },
+  { href: "/admin/subscriptions", label: "Subscriptions", icon: ClipboardList },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/whatsapp-health", label: "WhatsApp", icon: MessageCircle },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },

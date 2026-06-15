@@ -40,7 +40,7 @@ export default function MessageDetailPage() {
         return null;
     return (<div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/whatsapp/logs" className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400">
+        <Link to="/whatsapp/logs" className="text-sm font-medium text-teal-600 hover:text-teal-500">
           &larr; Back to Logs
         </Link>
       </div>
@@ -49,11 +49,11 @@ export default function MessageDetailPage() {
 
       {loading && <LoadingState title="Loading message..."/>}
 
-      {error && (<div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+      {error && (<div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>)}
 
-      {message && (<div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+      {message && (<div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <MessageDetailPanel message={message}/>
         </div>)}
     </div>);

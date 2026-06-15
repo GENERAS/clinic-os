@@ -1,7 +1,7 @@
 "use client";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/utils/cn";
-import { LayoutDashboard, Users, CalendarClock, Clock, Package, MessageCircle, Bell, User, Settings, X, Hospital, LogOut, Calendar, UserCog, Shield } from "lucide-react";
+import { LayoutDashboard, Users, CalendarClock, Clock, Package, MessageCircle, Bell, User, Settings, X, Hospital, LogOut, Calendar, UserCog, Shield, CreditCard } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 
 function NavItem({ item, onClose }) {
@@ -70,6 +70,10 @@ export function Sidebar({ isOpen, onClose }) {
           <NavSection label="Communication">
             <NavItem item={{ href: "/notifications", label: "Notifications", icon: Bell }} onClose={onClose} />
             <NavItem item={{ href: "/whatsapp", label: "WhatsApp", icon: MessageCircle }} onClose={onClose} />
+          </NavSection>
+
+          <NavSection label="Management">
+            <NavItem item={{ href: "/subscription", label: "Subscription", icon: CreditCard }} onClose={onClose} />
           </NavSection>
 
           <NavSection label="Settings">

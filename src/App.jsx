@@ -32,8 +32,10 @@ class ErrorBoundary extends Component {
     }
 }
 const LoginPage = lazy(() => import("@/app/(auth)/login/page"));
+const SignupPage = lazy(() => import("@/app/(auth)/signup/page"));
 const ForgotPasswordPage = lazy(() => import("@/app/(auth)/forgot-password/page"));
 const ResetPasswordPage = lazy(() => import("@/app/(auth)/reset-password/page"));
+const LandingPage = lazy(() => import("@/app/page"));
 const OnboardingPage = lazy(() => import("@/app/(onboarding)/onboarding/page"));
 const DashboardPage = lazy(() => import("@/app/(dashboard)/dashboard/page"));
 const ProfilePage = lazy(() => import("@/app/(dashboard)/profile/page"));
@@ -55,6 +57,7 @@ const StaffPage = lazy(() => import("@/app/(dashboard)/settings/staff/page"));
 const StaffDetailPage = lazy(() => import("@/app/(dashboard)/settings/staff/[id]/page"));
 const WhatsAppSettingsPage = lazy(() => import("@/app/(dashboard)/settings/whatsapp/page"));
 const WhatsAppPage = lazy(() => import("@/app/(dashboard)/whatsapp/page"));
+const SubscriptionPage = lazy(() => import("@/app/(dashboard)/subscription/page"));
 const WhatsAppLogsPage = lazy(() => import("@/app/(dashboard)/whatsapp/logs/page"));
 const MessageDetailPage = lazy(() => import("@/app/(dashboard)/whatsapp/logs/[id]/page"));
 const SuperAdminPage = lazy(() => import("@/app/(dashboard)/super-admin/page"));
@@ -69,6 +72,7 @@ const AdminSupport = lazy(() => import("@/app/(dashboard)/super-admin/support/pa
 const AdminSettings = lazy(() => import("@/app/(dashboard)/super-admin/settings/page"));
 const AdminProfile = lazy(() => import("@/app/(dashboard)/super-admin/profile/page"));
 const AdminNotifications = lazy(() => import("@/app/(dashboard)/super-admin/notifications/page"));
+const SuperAdminPayments = lazy(() => import("@/app/(dashboard)/super-admin/payments/page"));
 const PlatformHealthPage = lazy(() => import("@/app/(dashboard)/super-admin/health/page"));
 const ClinicDetail = lazy(() => import("@/app/(dashboard)/super-admin/clinics/[id]/page"));
 function Spinner() {
@@ -113,17 +117,17 @@ export default function App() {
         <Suspense fallback={<Spinner />}>
           <Routes>
             <Route element={<PublicRoute />}>
+              <Route path="/" element={<LandingPage />}/>
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<LoginPage />}/>
+                <Route path="/signup" element={<SignupPage />}/>
                 <Route path="/forgot-password" element={<ForgotPasswordPage />}/>
                 <Route path="/reset-password" element={<ResetPasswordPage />}/>
               </Route>
             </Route>
 
-            {/* Onboarding — accessible to everyone; component redirects if clinic exists */}
-            <Route path="/onboarding" element={<OnboardingPage />}/>
-
             <Route element={<ProtectedRoute />}>
+              <Route path="/onboarding" element={<OnboardingPage />}/>
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />}/>
                 <Route path="/profile" element={<ProfilePage />}/>
@@ -145,6 +149,7 @@ export default function App() {
                 <Route path="/settings/staff/:id" element={<StaffDetailPage />}/>
                 <Route path="/settings/whatsapp" element={<WhatsAppSettingsPage />}/>
                 <Route path="/whatsapp" element={<WhatsAppPage />}/>
+                <Route path="/subscription" element={<SubscriptionPage />}/>
                 <Route path="/whatsapp/logs" element={<WhatsAppLogsPage />}/>
                 <Route path="/whatsapp/logs/:id" element={<MessageDetailPage />}/>
                 <Route path="/super-admin/*" element={<Navigate to="/admin" replace />}/>
@@ -166,13 +171,13 @@ export default function App() {
                 <Route path="/admin/support" element={<AdminSupport />} />
                 <Route path="/admin/notifications" element={<AdminNotifications />} />
                 <Route path="/admin/health" element={<PlatformHealthPage />} />
+                <Route path="/admin/payments" element={<SuperAdminPayments />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="/admin/profile" element={<AdminProfile />} />
               </Route>
             </Route>
 
-            <Route path="/" element={<Navigate to="/dashboard" replace/>}/>
-            <Route path="*" element={<Navigate to="/dashboard" replace/>}/>
+            <Route path="*" element={<Navigate to="/" replace/>}/>
           </Routes>
         </Suspense>
         <Toaster />

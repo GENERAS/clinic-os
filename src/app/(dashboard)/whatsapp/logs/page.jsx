@@ -42,11 +42,10 @@ export default function WhatsAppLogsPage() {
     return (<div className="space-y-6">
         <PageHeader title="Message Logs" description="View all WhatsApp messages sent to patients"/>
 
-        {/* Filters */}
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }} className="mt-1 block rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+            <label className="text-xs font-medium text-slate-500">Status</label>
+            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }} className="mt-1 block rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900">
               <option value="">All</option>
               <option value="queued">Queued</option>
               <option value="sent">Sent</option>
@@ -56,17 +55,16 @@ export default function WhatsAppLogsPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">From</label>
-            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0); }} className="mt-1 block rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"/>
+            <label className="text-xs font-medium text-slate-500">From</label>
+            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0); }} className="mt-1 block rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"/>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">To</label>
-            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0); }} className="mt-1 block rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white"/>
+            <label className="text-xs font-medium text-slate-500">To</label>
+            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0); }} className="mt-1 block rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"/>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
           <MessageLogTable logs={logs} total={total} page={page} pageSize={20} onPageChange={setPage} loading={loading}/>
         </div>
       </div>);

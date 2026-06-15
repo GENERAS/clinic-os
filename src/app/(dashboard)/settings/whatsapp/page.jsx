@@ -16,15 +16,15 @@ function StepIndicator({ currentStep, steps }) {
                 <div key={i} className="flex items-center gap-2">
                     <div className={`flex size-7 items-center justify-center rounded-full text-xs font-medium ${
                         i <= currentStep
-                            ? "bg-primary text-white"
-                            : "bg-muted text-muted-foreground"
+                            ? "bg-teal-600 text-white"
+                            : "bg-slate-100 text-slate-500"
                     }`}>
                         {i + 1}
                     </div>
-                    <span className={`text-xs font-medium ${i <= currentStep ? "text-foreground" : "text-muted-foreground"}`}>
+                    <span className={`text-xs font-medium ${i <= currentStep ? "text-slate-900" : "text-slate-500"}`}>
                         {step}
                     </span>
-                    {i < steps.length - 1 && <div className="h-px w-6 bg-border"/>}
+                    {i < steps.length - 1 && <div className="h-px w-6 bg-slate-200"/>}
                 </div>
             ))}
         </div>
@@ -160,68 +160,66 @@ export default function WhatsAppSettingsPage() {
             <PageHeader title="WhatsApp Integration" description="Connect WhatsApp to send automated appointment reminders to patients"/>
 
             {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     {error}
                 </div>
             )}
             {successMsg && (
-                <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400">
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
                     {successMsg}
                 </div>
             )}
 
-            {/* Onboarding Steps */}
             <SectionCard title="Connection Setup">
                 <StepIndicator
                     currentStep={onboardingStep}
                     steps={["Connect API", "Verify Webhook", "Send Test"]}
                 />
 
-                {/* Step 1: API Credentials */}
                 <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-foreground">Step 1: Enter WhatsApp Cloud API Credentials</h4>
-                    <p className="text-xs text-muted-foreground">
+                    <h4 className="text-sm font-medium text-slate-900">Step 1: Enter WhatsApp Cloud API Credentials</h4>
+                    <p className="text-xs text-slate-500">
                         Create a Meta Business Account and WhatsApp Business Account, then enter your credentials below.
                     </p>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label className="text-xs font-medium text-foreground">Phone Number ID *</label>
+                            <label className="text-xs font-medium text-slate-700">Phone Number ID *</label>
                             <input
                                 type="text" value={credForm.phone_number_id}
                                 onChange={(e) => setCredForm({ ...credForm, phone_number_id: e.target.value })}
                                 placeholder="e.g. 123456789012345"
-                                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
+                                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-foreground">Business Account ID</label>
+                            <label className="text-xs font-medium text-slate-700">Business Account ID</label>
                             <input
                                 type="text" value={credForm.business_account_id}
                                 onChange={(e) => setCredForm({ ...credForm, business_account_id: e.target.value })}
                                 placeholder="Optional"
-                                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
+                                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
                             />
                         </div>
                         <div className="sm:col-span-2">
-                            <label className="text-xs font-medium text-foreground">Access Token *</label>
+                            <label className="text-xs font-medium text-slate-700">Access Token *</label>
                             <input
                                 type="password" value={credForm.access_token}
                                 onChange={(e) => setCredForm({ ...credForm, access_token: e.target.value })}
                                 placeholder="Paste your permanent access token"
-                                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
+                                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
                             />
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-1 text-xs text-slate-500">
                                 Generate a permanent token from your Meta Business Account settings.
                             </p>
                         </div>
                         <div className="sm:col-span-2">
-                            <label className="text-xs font-medium text-foreground">Webhook Verify Token</label>
+                            <label className="text-xs font-medium text-slate-700">Webhook Verify Token</label>
                             <input
                                 type="text" value={credForm.webhook_verify_token}
                                 onChange={(e) => setCredForm({ ...credForm, webhook_verify_token: e.target.value })}
                                 placeholder="Set a custom verify token for webhook security"
-                                className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
+                                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
                             />
                         </div>
                     </div>
@@ -230,7 +228,7 @@ export default function WhatsAppSettingsPage() {
                         <button
                             onClick={handleSaveCredentials}
                             disabled={savingCreds || !credForm.access_token || !credForm.phone_number_id}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
                         >
                             {savingCreds ? "Saving..." : hasCredentials ? "Update Credentials" : "Save & Connect"}
                         </button>
@@ -248,49 +246,47 @@ export default function WhatsAppSettingsPage() {
 
                 {hasCredentials && (
                     <>
-                        {/* Step 2: Webhook */}
-                        <div className="mt-8 border-t border-border pt-6 space-y-4">
-                            <h4 className="text-sm font-medium text-foreground">Step 2: Configure Webhook</h4>
-                            <p className="text-xs text-muted-foreground">
+                        <div className="mt-8 border-t border-slate-200 pt-6 space-y-4">
+                            <h4 className="text-sm font-medium text-slate-900">Step 2: Configure Webhook</h4>
+                            <p className="text-xs text-slate-500">
                                 Add this webhook URL in your Meta WhatsApp Business Account settings to receive delivery status updates.
                             </p>
-                            <div className="flex items-center gap-3 rounded-lg bg-muted px-4 py-3">
-                                <code className="flex-1 text-xs break-all font-mono">{webhookUrl}</code>
+                            <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-3">
+                                <code className="flex-1 text-xs break-all font-mono text-slate-700">{webhookUrl}</code>
                                 <button
                                     onClick={() => navigator.clipboard.writeText(webhookUrl)}
-                                    className="shrink-0 text-xs font-medium text-primary hover:text-primary/80"
+                                    className="shrink-0 text-xs font-medium text-teal-600 hover:text-teal-500"
                                 >
                                     Copy
                                 </button>
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <div className={`h-2 w-2 rounded-full ${connectionStatus?.connected ? "bg-green-500" : "bg-amber-500"}`}/>
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <div className={`h-2 w-2 rounded-full ${connectionStatus?.connected ? "bg-emerald-500" : "bg-amber-500"}`}/>
                                 {connectionStatus?.connected
                                     ? "Webhook verified — receiving delivery updates."
                                     : "Webhook not yet verified. Configure it in Meta and send a test message."}
                             </div>
                         </div>
 
-                        {/* Step 3: Test */}
-                        <div className="mt-8 border-t border-border pt-6 space-y-4">
-                            <h4 className="text-sm font-medium text-foreground">Step 3: Send Test Message</h4>
-                            <p className="text-xs text-muted-foreground">
+                        <div className="mt-8 border-t border-slate-200 pt-6 space-y-4">
+                            <h4 className="text-sm font-medium text-slate-900">Step 3: Send Test Message</h4>
+                            <p className="text-xs text-slate-500">
                                 Send a test WhatsApp message to verify everything is working.
                             </p>
                             <div className="flex items-end gap-3 max-w-md">
                                 <div className="flex-1">
-                                    <label className="text-xs font-medium text-foreground">Phone Number</label>
+                                    <label className="text-xs font-medium text-slate-700">Phone Number</label>
                                     <input
                                         type="tel" value={testPhone}
                                         onChange={(e) => setTestPhone(e.target.value)}
                                         placeholder="+12025551234"
-                                        className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
+                                        className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
                                     />
                                 </div>
                                 <button
                                     onClick={handleTestSend}
                                     disabled={testing || !testPhone}
-                                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                                    className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
                                 >
                                     {testing ? "Sending..." : "Send Test"}
                                 </button>
@@ -310,17 +306,16 @@ export default function WhatsAppSettingsPage() {
                 </div>
             </div>
 
-            {/* Template Management */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-sm font-semibold text-foreground">Message Templates</h3>
-                        <p className="text-xs text-muted-foreground">Manage WhatsApp message templates with dynamic variables</p>
+                        <h3 className="text-sm font-semibold text-slate-900">Message Templates</h3>
+                        <p className="text-xs text-slate-500">Manage WhatsApp message templates with dynamic variables</p>
                     </div>
                     {!editingTemplate && (
                         <button onClick={() => setEditingTemplate({
                             id: "", name: "", template_type: "appointment_reminder", content: "", is_active: true, updated_at: "",
-                        })} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                        })} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500">
                             New Template
                         </button>
                     )}
@@ -338,28 +333,28 @@ export default function WhatsAppSettingsPage() {
                 ) : (
                     <div className="space-y-3">
                         {templates.map((tpl) => (
-                            <div key={tpl.id} className="rounded-xl border bg-card p-4">
+                            <div key={tpl.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h4 className="text-sm font-medium text-foreground">{tpl.name}</h4>
-                                        <p className="text-xs text-muted-foreground">
+                                        <h4 className="text-sm font-medium text-slate-900">{tpl.name}</h4>
+                                        <p className="text-xs text-slate-500">
                                             {tpl.template_type.replace(/_/g, " ")} —{" "}
                                             {tpl.is_active ? (
-                                                <span className="text-green-600">Active</span>
+                                                <span className="text-emerald-600">Active</span>
                                             ) : (
-                                                <span className="text-muted-foreground">Inactive</span>
+                                                <span className="text-slate-400">Inactive</span>
                                             )}
                                         </p>
                                     </div>
                                     <button onClick={() => setEditingTemplate(tpl)}
-                                        className="text-xs font-medium text-primary hover:text-primary/80">
+                                        className="text-xs font-medium text-teal-600 hover:text-teal-500">
                                         Edit
                                     </button>
                                 </div>
                             </div>
                         ))}
                         {templates.length === 0 && (
-                            <p className="py-6 text-center text-sm text-muted-foreground">No templates yet. Create your first template.</p>
+                            <p className="py-6 text-center text-sm text-slate-500">No templates yet. Create your first template.</p>
                         )}
                     </div>
                 )}

@@ -18,6 +18,9 @@ import { ClinicOverviewCard } from "@/features/dashboard/components/clinic-overv
 import { TaskCard } from "@/features/dashboard/components/task-card";
 import { NotificationsPanel } from "@/features/dashboard/components/notifications-panel";
 import { useRealtimeAppointments } from "@/hooks/useRealtimeAppointments";
+import { ActivationChecklist } from "@/components/dashboard/activation-checklist";
+import { SubscriptionStatusWidget } from "@/features/subscription/components/subscription-status-widget";
+import { getSubscriptionService } from "@/features/subscription/services/subscription.service";
 import { toast } from "sonner";
 
 export default function DashboardPage() {
@@ -28,8 +31,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(null);
+  const [subscriptionData, setSubscriptionData] = useState({ subscription: null, plan: null, loading: true });
   const dashboardService = useMemo(() => getDashboardService(), []);
   const appointmentService = useMemo(() => getAppointmentService(), []);
+  const subscriptionService = useMemo(() => getSubscriptionService(), []);
 
   const { appointments, status: realtimeStatus } = useRealtimeAppointments(clinicId);
 
@@ -66,6 +71,16 @@ export default function DashboardPage() {
   }, [clinicId, dashboardService]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!clinicId) return;
+    setSubscriptionData((prev) => ({ ...prev, loading: true }));
+    subscriptionService.getSubscription(clinicId).then((sub) => {
+      setSubscriptionData({ subscription: sub, plan: sub?.plans || null, loading: false });
+    }).catch(() => {
+      setSubscriptionData({ subscription: null, plan: null, loading: false });
+    });
+  }, [clinicId]);
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     if (!clinicId || !user) return;
@@ -194,6 +209,12 @@ export default function DashboardPage() {
             </SectionCard>
           )}
 
+          <SubscriptionStatusWidget
+            subscription={subscriptionData.subscription}
+            plan={subscriptionData.plan}
+            loading={subscriptionData.loading}
+          />
+          <ActivationChecklist clinicId={clinicId} />
           <SectionCard title="Clinic">
             <ClinicOverviewCard clinic={data?.clinic || null}/>
           </SectionCard>

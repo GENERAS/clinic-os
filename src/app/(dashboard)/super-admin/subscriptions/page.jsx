@@ -235,13 +235,13 @@ plan?.name || "—"
       key: "amount", header: "Amount",      render: (
 sub) => {
         const plan = planMap[sub.plan_id];
-        return <span className="text-xs font-medium">${
-Number(
-plan?.price_monthly || 0
-).toFixed(
-0
-)
-}/mo</span>;
+        return <span className="text-xs font-medium">{
+          Number(
+            plan?.price_monthly || 0
+          ).toLocaleString(
+            "en-RW"
+          )
+        } RWF/mo</span>;
       
 },    
 },    {
@@ -310,7 +310,7 @@ p.name
 } (
 ${
 p.price_monthly
-}/mo
+} RWF/mo
 )</option>            
 )
 )
@@ -343,13 +343,13 @@ loading
     <div className="space-y-6">      <PageHeader title="Subscriptions" description={`${subscriptions.length} subscription(s).`} />      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">        <MetricCard icon={
 TrendingUp
 } label="MRR" value={
-`$${mrr.toLocaleString()}`
-} sub={
-`${arr.toLocaleString()} ARR`
+`${mrr.toLocaleString("en-RW")} RWF`
+          } sub={
+            `${arr.toLocaleString("en-RW")} RWF ARR`
 }  />        <MetricCard icon={
 CreditCard
 } label="ARR" value={
-`$${arr.toLocaleString()}`
+`${arr.toLocaleString("en-RW")} RWF`
 } sub="Annualized"  />        <MetricCard icon={
 AlertTriangle
 } label="Failed Payments" value={
