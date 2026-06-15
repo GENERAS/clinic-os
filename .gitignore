@@ -13,16 +13,13 @@ node_modules
 # testing
 coverage
 
-# next.js
-.next/
-out/
+# vite
+dist/
 
 # production
 build
 dist
 
-# turbo
-.turbo
 
 # misc
 .DS_Store
@@ -42,4 +39,4 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+# no Next.js artifacts in this Vite project

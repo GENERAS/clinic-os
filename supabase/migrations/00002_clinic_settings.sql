@@ -66,17 +66,19 @@ alter table "public"."clinic_operating_hours" enable row level security;
 alter table "public"."clinic_preferences" enable row level security;
 alter table "public"."clinic_notification_settings" enable row level security;
 
--- clinic_operating_hours: users can only access their own clinic's hours
+drop policy if exists "operating_hours_select_same_clinic" on "public"."clinic_operating_hours";
 create policy "operating_hours_select_same_clinic" on "public"."clinic_operating_hours"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "operating_hours_insert_same_clinic" on "public"."clinic_operating_hours";
 create policy "operating_hours_insert_same_clinic" on "public"."clinic_operating_hours"
     for insert with check (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "operating_hours_update_same_clinic" on "public"."clinic_operating_hours";
 create policy "operating_hours_update_same_clinic" on "public"."clinic_operating_hours"
     for update using (
         clinic_id = public.get_user_clinic_id()
@@ -84,22 +86,25 @@ create policy "operating_hours_update_same_clinic" on "public"."clinic_operating
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "operating_hours_delete_same_clinic" on "public"."clinic_operating_hours";
 create policy "operating_hours_delete_same_clinic" on "public"."clinic_operating_hours"
     for delete using (
         clinic_id = public.get_user_clinic_id()
     );
 
--- clinic_preferences: users can only access their own clinic's preferences
+drop policy if exists "preferences_select_same_clinic" on "public"."clinic_preferences";
 create policy "preferences_select_same_clinic" on "public"."clinic_preferences"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "preferences_insert_same_clinic" on "public"."clinic_preferences";
 create policy "preferences_insert_same_clinic" on "public"."clinic_preferences"
     for insert with check (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "preferences_update_same_clinic" on "public"."clinic_preferences";
 create policy "preferences_update_same_clinic" on "public"."clinic_preferences"
     for update using (
         clinic_id = public.get_user_clinic_id()
@@ -107,17 +112,19 @@ create policy "preferences_update_same_clinic" on "public"."clinic_preferences"
         clinic_id = public.get_user_clinic_id()
     );
 
--- clinic_notification_settings: users can only access their own clinic's notification settings
+drop policy if exists "notification_settings_select_same_clinic" on "public"."clinic_notification_settings";
 create policy "notification_settings_select_same_clinic" on "public"."clinic_notification_settings"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "notification_settings_insert_same_clinic" on "public"."clinic_notification_settings";
 create policy "notification_settings_insert_same_clinic" on "public"."clinic_notification_settings"
     for insert with check (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "notification_settings_update_same_clinic" on "public"."clinic_notification_settings";
 create policy "notification_settings_update_same_clinic" on "public"."clinic_notification_settings"
     for update using (
         clinic_id = public.get_user_clinic_id()

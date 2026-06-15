@@ -63,17 +63,19 @@ alter table "public"."appointments" enable row level security;
 alter table "public"."appointment_status_history" enable row level security;
 alter table "public"."appointment_notes" enable row level security;
 
--- Appointments: users can only access their own clinic's appointments
+drop policy if exists "appointments_select_same_clinic" on "public"."appointments";
 create policy "appointments_select_same_clinic" on "public"."appointments"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "appointments_insert_same_clinic" on "public"."appointments";
 create policy "appointments_insert_same_clinic" on "public"."appointments"
     for insert with check (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "appointments_update_same_clinic" on "public"."appointments";
 create policy "appointments_update_same_clinic" on "public"."appointments"
     for update using (
         clinic_id = public.get_user_clinic_id()
@@ -81,12 +83,13 @@ create policy "appointments_update_same_clinic" on "public"."appointments"
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "appointments_delete_same_clinic" on "public"."appointments";
 create policy "appointments_delete_same_clinic" on "public"."appointments"
     for delete using (
         clinic_id = public.get_user_clinic_id()
     );
 
--- Status history: users can view history for their clinic's appointments
+drop policy if exists "status_history_select_same_clinic" on "public"."appointment_status_history";
 create policy "status_history_select_same_clinic" on "public"."appointment_status_history"
     for select using (
         appointment_id in (
@@ -94,6 +97,7 @@ create policy "status_history_select_same_clinic" on "public"."appointment_statu
         )
     );
 
+drop policy if exists "status_history_insert_same_clinic" on "public"."appointment_status_history";
 create policy "status_history_insert_same_clinic" on "public"."appointment_status_history"
     for insert with check (
         appointment_id in (
@@ -101,7 +105,7 @@ create policy "status_history_insert_same_clinic" on "public"."appointment_statu
         )
     );
 
--- Notes: users can view and add notes for their clinic's appointments
+drop policy if exists "notes_select_same_clinic" on "public"."appointment_notes";
 create policy "notes_select_same_clinic" on "public"."appointment_notes"
     for select using (
         appointment_id in (
@@ -109,6 +113,7 @@ create policy "notes_select_same_clinic" on "public"."appointment_notes"
         )
     );
 
+drop policy if exists "notes_insert_same_clinic" on "public"."appointment_notes";
 create policy "notes_insert_same_clinic" on "public"."appointment_notes"
     for insert with check (
         appointment_id in (

@@ -1,0 +1,11 @@
+"use client";
+import { useAuth } from "../hooks/use-auth";
+import { can } from "../utils/permissions";
+export function PermissionGuard({ permission, fallback = null, children }) {
+    const { permissions, isLoading } = useAuth();
+    if (isLoading)
+        return null;
+    if (!can(permissions, permission))
+        return <>{fallback}</>;
+    return <>{children}</>;
+}

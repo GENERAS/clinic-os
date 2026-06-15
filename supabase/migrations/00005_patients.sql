@@ -63,17 +63,19 @@ create index if not exists "idx_appointments_patient_id" on "public"."appointmen
 alter table "public"."patients" enable row level security;
 alter table "public"."patient_notes" enable row level security;
 
--- Patients: users can only access their own clinic's patients
+drop policy if exists "patients_select_same_clinic" on "public"."patients";
 create policy "patients_select_same_clinic" on "public"."patients"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "patients_insert_same_clinic" on "public"."patients";
 create policy "patients_insert_same_clinic" on "public"."patients"
     for insert with check (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "patients_update_same_clinic" on "public"."patients";
 create policy "patients_update_same_clinic" on "public"."patients"
     for update using (
         clinic_id = public.get_user_clinic_id()
@@ -81,17 +83,19 @@ create policy "patients_update_same_clinic" on "public"."patients"
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "patients_delete_same_clinic" on "public"."patients";
 create policy "patients_delete_same_clinic" on "public"."patients"
     for delete using (
         clinic_id = public.get_user_clinic_id()
     );
 
--- Patient notes: users can access notes for their clinic's patients
+drop policy if exists "patient_notes_select_same_clinic" on "public"."patient_notes";
 create policy "patient_notes_select_same_clinic" on "public"."patient_notes"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
+drop policy if exists "patient_notes_insert_same_clinic" on "public"."patient_notes";
 create policy "patient_notes_insert_same_clinic" on "public"."patient_notes"
     for insert with check (
         clinic_id = public.get_user_clinic_id()

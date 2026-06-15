@@ -161,23 +161,24 @@ create or replace function "public"."get_user_clinic_id"()
 returns uuid
 language sql
 stable
+security definer
 as $$
     select clinic_id from public.users where id = auth.uid()
 $$;
 
--- clinics: users can only view their own clinic
+drop policy if exists "clinics_select_own" on "public"."clinics";
 create policy "clinics_select_own" on "public"."clinics"
     for select using (
         id = public.get_user_clinic_id()
     );
 
--- users: users can view others in the same clinic
+drop policy if exists "users_select_same_clinic" on "public"."users";
 create policy "users_select_same_clinic" on "public"."users"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
--- users: users can update their own record
+drop policy if exists "users_update_own" on "public"."users";
 create policy "users_update_own" on "public"."users"
     for update using (
         id = auth.uid()
@@ -185,19 +186,55 @@ create policy "users_update_own" on "public"."users"
         id = auth.uid()
     );
 
--- roles: authenticated users can view roles
+drop policy if exists "users_update_same_clinic" on "public"."users";
+create policy "users_update_same_clinic" on "public"."users"
+    for update using (
+        clinic_id = public.get_user_clinic_id()
+    ) with check (
+        clinic_id = public.get_user_clinic_id()
+    );
+
+drop policy if exists "clinics_update_same_clinic" on "public"."clinics";
+create policy "clinics_update_same_clinic" on "public"."clinics"
+    for update using (
+        id = public.get_user_clinic_id()
+    ) with check (
+        id = public.get_user_clinic_id()
+    );
+
+drop policy if exists "user_roles_insert_same_clinic" on "public"."user_roles";
+create policy "user_roles_insert_same_clinic" on "public"."user_roles"
+    for insert with check (
+        user_id in (select id from public.users where clinic_id = public.get_user_clinic_id())
+    );
+
+drop policy if exists "user_roles_update_same_clinic" on "public"."user_roles";
+create policy "user_roles_update_same_clinic" on "public"."user_roles"
+    for update using (
+        user_id in (select id from public.users where clinic_id = public.get_user_clinic_id())
+    ) with check (
+        user_id in (select id from public.users where clinic_id = public.get_user_clinic_id())
+    );
+
+drop policy if exists "user_roles_delete_same_clinic" on "public"."user_roles";
+create policy "user_roles_delete_same_clinic" on "public"."user_roles"
+    for delete using (
+        user_id in (select id from public.users where clinic_id = public.get_user_clinic_id())
+    );
+
+drop policy if exists "roles_select_authenticated" on "public"."roles";
 create policy "roles_select_authenticated" on "public"."roles"
     for select using (
         auth.role() = 'authenticated'
     );
 
--- permissions: authenticated users can view permissions
+drop policy if exists "permissions_select_authenticated" on "public"."permissions";
 create policy "permissions_select_authenticated" on "public"."permissions"
     for select using (
         auth.role() = 'authenticated'
     );
 
--- user_roles: users can view roles within their clinic's users
+drop policy if exists "user_roles_select_same_clinic" on "public"."user_roles";
 create policy "user_roles_select_same_clinic" on "public"."user_roles"
     for select using (
         user_id in (
@@ -205,34 +242,60 @@ create policy "user_roles_select_same_clinic" on "public"."user_roles"
         )
     );
 
--- role_permissions: authenticated users can view
+drop policy if exists "role_permissions_select_authenticated" on "public"."role_permissions";
 create policy "role_permissions_select_authenticated" on "public"."role_permissions"
     for select using (
         auth.role() = 'authenticated'
     );
 
--- audit_logs: users can view logs within their clinic
+drop policy if exists "audit_logs_select_same_clinic" on "public"."audit_logs";
 create policy "audit_logs_select_same_clinic" on "public"."audit_logs"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
--- audit_logs: authenticated users can insert logs
+drop policy if exists "audit_logs_insert_authenticated" on "public"."audit_logs";
 create policy "audit_logs_insert_authenticated" on "public"."audit_logs"
     for insert with check (
         clinic_id = public.get_user_clinic_id()
     );
 
--- notifications: users can view notifications within their clinic
+drop policy if exists "notifications_select_same_clinic" on "public"."notifications";
 create policy "notifications_select_same_clinic" on "public"."notifications"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
--- notifications: users can mark notifications as read
+drop policy if exists "notifications_update_own" on "public"."notifications";
 create policy "notifications_update_own" on "public"."notifications"
     for update using (
         clinic_id = public.get_user_clinic_id()
     ) with check (
+        clinic_id = public.get_user_clinic_id()
+    );
+
+drop policy if exists "notifications_insert_own" on "public"."notifications";
+create policy "notifications_insert_own" on "public"."notifications"
+    for insert with check (
+        clinic_id = public.get_user_clinic_id()
+    );
+
+drop policy if exists "notifications_delete_own" on "public"."notifications";
+create policy "notifications_delete_own" on "public"."notifications"
+    for delete using (
+        clinic_id = public.get_user_clinic_id()
+    );
+
+drop policy if exists "audit_logs_update_same_clinic" on "public"."audit_logs";
+create policy "audit_logs_update_same_clinic" on "public"."audit_logs"
+    for update using (
+        clinic_id = public.get_user_clinic_id()
+    ) with check (
+        clinic_id = public.get_user_clinic_id()
+    );
+
+drop policy if exists "audit_logs_delete_same_clinic" on "public"."audit_logs";
+create policy "audit_logs_delete_same_clinic" on "public"."audit_logs"
+    for delete using (
         clinic_id = public.get_user_clinic_id()
     );

@@ -35,19 +35,19 @@ create index if not exists "idx_users_last_login_at" on "public"."users" ("last_
 -- ********************************************
 alter table "public"."staff_invitations" enable row level security;
 
--- staff_invitations: users can view invitations for their own clinic
+drop policy if exists "staff_invitations_select_same_clinic" on "public"."staff_invitations";
 create policy "staff_invitations_select_same_clinic" on "public"."staff_invitations"
     for select using (
         clinic_id = public.get_user_clinic_id()
     );
 
--- staff_invitations: users can insert invitations for their own clinic
+drop policy if exists "staff_invitations_insert_same_clinic" on "public"."staff_invitations";
 create policy "staff_invitations_insert_same_clinic" on "public"."staff_invitations"
     for insert with check (
         clinic_id = public.get_user_clinic_id()
     );
 
--- staff_invitations: users can update invitations for their own clinic
+drop policy if exists "staff_invitations_update_same_clinic" on "public"."staff_invitations";
 create policy "staff_invitations_update_same_clinic" on "public"."staff_invitations"
     for update using (
         clinic_id = public.get_user_clinic_id()

@@ -1,5 +1,12 @@
 -- ClinicOS Seed Data
--- Creates default roles and permissions for MVP
+-- Creates default clinic, roles and permissions for MVP
+
+-- ********************************************
+-- DEFAULT CLINIC (required for auth trigger)
+-- ********************************************
+insert into "public"."clinics" (name, slug, timezone) values
+    ('My Clinic', 'my-clinic', 'UTC')
+on conflict (slug) do nothing;
 
 -- ********************************************
 -- ROLES

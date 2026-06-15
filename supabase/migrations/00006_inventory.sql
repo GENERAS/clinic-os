@@ -65,35 +65,42 @@ alter table "public"."inventory_categories" enable row level security;
 alter table "public"."inventory_items" enable row level security;
 alter table "public"."inventory_transactions" enable row level security;
 
--- Categories: users can only access their own clinic's categories
+drop policy if exists "categories_select_same_clinic" on "public"."inventory_categories";
 create policy "categories_select_same_clinic" on "public"."inventory_categories"
     for select using (clinic_id = public.get_user_clinic_id());
 
+drop policy if exists "categories_insert_same_clinic" on "public"."inventory_categories";
 create policy "categories_insert_same_clinic" on "public"."inventory_categories"
     for insert with check (clinic_id = public.get_user_clinic_id());
 
+drop policy if exists "categories_update_same_clinic" on "public"."inventory_categories";
 create policy "categories_update_same_clinic" on "public"."inventory_categories"
     for update using (clinic_id = public.get_user_clinic_id()) with check (clinic_id = public.get_user_clinic_id());
 
+drop policy if exists "categories_delete_same_clinic" on "public"."inventory_categories";
 create policy "categories_delete_same_clinic" on "public"."inventory_categories"
     for delete using (clinic_id = public.get_user_clinic_id());
 
--- Items: users can only access their own clinic's items
+drop policy if exists "items_select_same_clinic" on "public"."inventory_items";
 create policy "items_select_same_clinic" on "public"."inventory_items"
     for select using (clinic_id = public.get_user_clinic_id());
 
+drop policy if exists "items_insert_same_clinic" on "public"."inventory_items";
 create policy "items_insert_same_clinic" on "public"."inventory_items"
     for insert with check (clinic_id = public.get_user_clinic_id());
 
+drop policy if exists "items_update_same_clinic" on "public"."inventory_items";
 create policy "items_update_same_clinic" on "public"."inventory_items"
     for update using (clinic_id = public.get_user_clinic_id()) with check (clinic_id = public.get_user_clinic_id());
 
+drop policy if exists "items_delete_same_clinic" on "public"."inventory_items";
 create policy "items_delete_same_clinic" on "public"."inventory_items"
     for delete using (clinic_id = public.get_user_clinic_id());
 
--- Transactions: users can only access their own clinic's transactions
+drop policy if exists "transactions_select_same_clinic" on "public"."inventory_transactions";
 create policy "transactions_select_same_clinic" on "public"."inventory_transactions"
     for select using (clinic_id = public.get_user_clinic_id());
 
+drop policy if exists "transactions_insert_same_clinic" on "public"."inventory_transactions";
 create policy "transactions_insert_same_clinic" on "public"."inventory_transactions"
     for insert with check (clinic_id = public.get_user_clinic_id());
