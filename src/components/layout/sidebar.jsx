@@ -1,7 +1,7 @@
 "use client";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/utils/cn";
-import { LayoutDashboard, Users, CalendarClock, Clock, Package, MessageCircle, Bell, User, Settings, X, Hospital, LogOut, Calendar, UserCog, Shield, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users, CalendarClock, Clock, Package, MessageCircle, Bell, User, Settings, X, Hospital, LogOut, Calendar, UserCog, Shield, CreditCard, Stethoscope } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 
 function NavItem({ item, onClose }) {
@@ -65,6 +65,10 @@ export function Sidebar({ isOpen, onClose }) {
             <NavItem item={{ href: "/appointments/calendar", label: "Calendar", icon: Calendar }} onClose={onClose} />
             <NavItem item={{ href: "/patients", label: "Patients", icon: Users }} onClose={onClose} />
             <NavItem item={{ href: "/inventory", label: "Inventory", icon: Package }} onClose={onClose} />
+          </NavSection>
+
+          <NavSection label="Clinical">
+            <NavItem item={{ href: "/consultations/new", label: "New Consultation", icon: Stethoscope }} onClose={onClose} />
           </NavSection>
 
           <NavSection label="Communication">

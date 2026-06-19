@@ -1,7 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Calendar, Phone, Clock } from "lucide-react";
+import { Plus, Calendar, Phone, Clock, Stethoscope } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { RealtimeStatusBadge } from "@/components/shared/realtime-status-badge";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -140,6 +140,12 @@ function AppointmentCard({ appointment: apt, onStatusChange, nextStatus, nextLab
             <Phone className="size-3"/>
             Call
           </a>
+        )}
+        {apt.patient_id && apt.status !== "completed" && (
+          <Link to={`/consultations/new?appointmentId=${apt.id}&patientId=${apt.patient_id}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-purple-700 border-purple-200 hover:bg-purple-50 transition-colors">
+            <Stethoscope className="size-3"/>
+            Consult
+          </Link>
         )}
         {onStatusChange && (
           <button onClick={() => onStatusChange(apt.id, nextStatus)} className="inline-flex items-center gap-1 rounded-md bg-primary/90 px-2 py-1 text-xs font-medium text-white hover:bg-primary transition-colors">
