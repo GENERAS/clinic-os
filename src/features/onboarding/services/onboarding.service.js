@@ -24,7 +24,7 @@ export function getOnboardingService() {
     },
 
     async completeSetup({ clinicName, clinicPhone, clinicAddress, timezone, operatingHours }) {
-      const slug = slugify(clinicName);
+      const slug = slugify(clinicName) + "-" + Date.now();
 
       const { data, error } = await supabase.rpc("complete_onboarding", {
         p_clinic_name: clinicName,

@@ -1,538 +1,490 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Building2, Clock, ArrowRight, ArrowLeft, Check, Loader2, Smartphone, Users, CalendarDays, Bell, X, Plus } from "lucide-react";
+import {
+  Building2, Clock, ArrowRight, ArrowLeft, Check, Loader2,
+  Users, CalendarDays, Bell, Smartphone, Trophy, Target, Plus,
+  Sparkles, MessageCircle, Send, X
+} from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getOnboardingService } from "@/features/onboarding/services/onboarding.service";
+import { getDemoService } from "@/features/demo/demo.service";
+import { MissedRevenueCalculator } from "@/features/onboarding/components/missed-revenue-calculator";
+import { WhatsAppValuePreview } from "@/features/onboarding/components/whatsapp-value-preview";
+import { WinMomentCelebration } from "@/features/onboarding/components/win-moment-celebration";
+import { ConversionTrigger } from "@/features/onboarding/components/conversion-trigger";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
-const TIMEZONES = [
-  "UTC", "America/New_York", "America/Chicago", "America/Denver",
-  "America/Los_Angeles", "America/Anchorage", "Pacific/Honolulu",
-  "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow",
-  "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo",
-  "Australia/Sydney", "Pacific/Auckland",
-];
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-const HOUR_OPTIONS = [];
-for (let h = 0; h < 24; h++) {
-  HOUR_OPTIONS.push(`${String(h).padStart(2, "0")}:00`);
-  HOUR_OPTIONS.push(`${String(h).padStart(2, "0")}:30`);
-}
-
-const CLINIC_TYPES = ["Private Clinic", "Dental Clinic", "Medical Center", "Polyclinic", "Other"];
-
-function defaultHours() {
-  return DAYS.map((_, i) => ({
-    day_of_week: i + 1,
-    is_open: i < 5,
-    open_time: "09:00",
-    close_time: "17:00",
-  }));
-}
+const revenue = getDemoService().getEstimatedLostRevenue();
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, clinic, refresh } = useAuth();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [clinicId, setClinicId] = useState(null);
 
   if (!isAuthenticated) return <Navigate to="/signup" replace />;
-  if (clinic?.id) return <Navigate to="/dashboard" replace />;
+  if (clinic?.onboarding_completed && step === 0) return <Navigate to="/dashboard" replace />;
 
-  const [form, setForm] = useState({
-    clinicName: "",
-    clinicType: "Private Clinic",
-    clinicPhone: "",
-    clinicEmail: "",
-    clinicAddress: "",
-    district: "",
-    workingDays: DAYS.map((_, i) => i < 5),
-    openTime: "09:00",
-    closeTime: "17:00",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-    whatsappSetup: null,
-    staffInvites: [],
-    newStaffName: "",
-    newStaffEmail: "",
-    newStaffRole: "Receptionist",
-  });
+  const handleClinicCreated = (id) => {
+    setClinicId(id);
+    refresh();
+    setStep(3);
+  };
 
-  const update = useCallback((patch) => {
-    setForm((prev) => ({ ...prev, ...patch }));
-  }, []);
+  const handleComplete = async () => {
+    const supabase = createClient();
+    if (clinic?.id) {
+      await supabase.from("clinics").update({ onboarding_completed: true }).eq("id", clinic.id);
+    } else if (clinicId) {
+      await supabase.from("clinics").update({ onboarding_completed: true }).eq("id", clinicId);
+    }
+    await refresh();
+    setTimeout(() => navigate("/dashboard"), 400);
+  };
 
-  const handleNext = () => setStep((s) => Math.min(s + 1, 5));
-  const handleBack = () => setStep((s) => Math.max(s - 1, 1));
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-lg px-4 py-8">
+        {/* Steps tracker — simple dots */}
+        <div className="mb-6 flex items-center justify-center gap-1.5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === step ? "w-6 bg-teal-600" : i < step ? "w-2 bg-teal-400" : "w-2 bg-slate-200"}`} />
+          ))}
+        </div>
 
-  const handleSteps1and2 = async () => {
+        {step === 0 && <ValuePreviewStep onNext={() => setStep(1)} />}
+        {step === 1 && <ClinicSnapshotStep onNext={({ id }) => handleClinicCreated(id)} loading={loading} setLoading={setLoading} />}
+        {step === 2 && <div className="flex justify-center py-10"><Loader2 className="size-6 animate-spin text-teal-600" /></div>}
+        {step === 3 && <MissionOnePatient clinicId={clinicId} onNext={() => setStep(4)} />}
+        {step === 4 && <WhatsAppPreviewStep onNext={() => setStep(5)} />}
+        {step === 5 && <MissionTwoAppointment clinicId={clinicId} onNext={() => setStep(6)} />}
+        {step === 6 && <WinMomentStep onNext={() => setStep(7)} />}
+        {step === 7 && <CompletionStep onDashboard={handleComplete} monthlyLoss={revenue.monthlyLoss} />}
+      </div>
+    </div>
+  );
+}
+
+/* STEP 0 — Instant Value Preview */
+function ValuePreviewStep({ onNext }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 400); return () => clearTimeout(t); }, []);
+
+  return (
+    <div className={`transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+      <div className="mb-6 text-center">
+        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-teal-50">
+          <BarChart3Icon />
+        </div>
+        <h1 className="text-xl font-bold text-slate-900">This is how your clinic will look in 2 minutes</h1>
+        <p className="mt-1 text-sm text-slate-500">We'll show you the value first — then set up.</p>
+      </div>
+
+      <MissedRevenueCalculator
+        monthlyLoss={revenue.monthlyLoss}
+        yearlyLoss={revenue.yearlyLoss}
+        missedPerMonth={revenue.missedPerMonth}
+      />
+
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="text-sm font-semibold text-slate-900 mb-3">With ClinicOS you get</h3>
+        <div className="space-y-2">
+          {[
+            { icon: CalendarDays, label: "Smart scheduling dashboard" },
+            { icon: Bell, label: "Automatic WhatsApp reminders" },
+            { icon: Users, label: "Patient records at your fingertips" },
+            { icon: Clock, label: "Reduce no-shows by up to 80%" },
+          ].map((f) => (
+            <div key={f.label} className="flex items-center gap-3 text-sm text-slate-600">
+              <Check className="size-4 text-teal-500 shrink-0" />
+              {f.label}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={onNext}
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 transition-colors"
+      >
+        Set up your clinic <ArrowRight className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function BarChart3Icon() { return <svg className="size-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>; }
+
+/* STEP 1 — Clinic Snapshot (minimal) */
+function ClinicSnapshotStep({ onNext, loading, setLoading }) {
+  const { user, clinic } = useAuth();
+  const [form, setForm] = useState({ name: "", phone: "", role: "Owner" });
+  const supabase = createClient();
+
+  const update = (patch) => setForm((prev) => ({ ...prev, ...patch }));
+  const canContinue = form.name && form.phone;
+
+  const handleSubmit = async () => {
+    if (!canContinue || !user) return;
     setLoading(true);
     try {
-      const svc = getOnboardingService();
-      const openHours = form.workingDays
-        .map((isOpen, i) => ({
-          day_of_week: i + 1,
-          is_open: isOpen,
-          open_time: isOpen ? form.openTime : "09:00",
-          close_time: isOpen ? form.closeTime : "17:00",
-        }))
-        .filter((d) => d.is_open);
+      let clinicId;
 
-      await svc.completeSetup({
-        clinicName: form.clinicName,
-        clinicPhone: form.clinicPhone,
-        clinicAddress: form.clinicAddress,
-        timezone: form.timezone,
-        operatingHours: openHours,
-      });
+      if (clinic?.id) {
+        clinicId = clinic.id;
+        await supabase.from("clinics").update({ name: form.name, phone: form.phone }).eq("id", clinicId);
+      } else {
+        const slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "clinic";
+        const { data: newClinic } = await supabase.from("clinics").insert({
+          name: form.name,
+          slug: slug + "-" + Date.now(),
+          phone: form.phone,
+          status: "active",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Kigali",
+        }).select("id").single();
+        if (!newClinic) throw new Error("Failed to create clinic");
+        clinicId = newClinic.id;
 
-      const supabase = createClient();
-      const slug = form.clinicName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "clinic";
-      try {
-        await supabase.from("clinics").update({ clinic_type: form.clinicType }).eq("slug", slug);
-      } catch {} // column may not exist yet
+        await supabase.from("users").update({ clinic_id: clinicId }).eq("id", user.id);
+      }
 
-      refresh();
-      setStep(3);
+      const { data: ownerRole } = await supabase.from("roles").select("id").eq("name", "Owner").maybeSingle();
+      if (ownerRole) {
+        const { error: roleError } = await supabase.from("user_roles").insert({ user_id: user.id, role_id: ownerRole.id });
+        if (roleError && roleError.code !== "23505") {
+          throw roleError;
+        }
+      }
+
+      onNext({ id: clinicId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save clinic settings");
+      toast.error(err instanceof Error ? err.message : "Failed to create clinic");
     } finally {
       setLoading(false);
     }
   };
 
-  const addStaffInvite = () => {
-    if (!form.newStaffName || !form.newStaffEmail) return;
-    update({
-      staffInvites: [...form.staffInvites, { name: form.newStaffName, email: form.newStaffEmail, role: form.newStaffRole }],
-      newStaffName: "",
-      newStaffEmail: "",
-    });
-  };
-
-  const removeStaffInvite = (i) => {
-    update({ staffInvites: form.staffInvites.filter((_, idx) => idx !== i) });
-  };
-
-  const staffRoles = ["Doctor", "Receptionist", "Manager"];
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-2xl px-4 py-8">
-        <ProgressBar step={step} total={5} />
-
-        {step === 1 && (
-          <ClinicProfileStep
-            form={form}
-            update={update}
-            onNext={handleNext}
-          />
-        )}
-        {step === 2 && (
-          <BusinessSettingsStep
-            form={form}
-            update={update}
-            onBack={handleBack}
-            onComplete={handleSteps1and2}
-            loading={loading}
-          />
-        )}
-        {step === 3 && (
-          <WhatsAppSetupStep
-            form={form}
-            update={update}
-            onBack={handleBack}
-            onNext={handleNext}
-          />
-        )}
-        {step === 4 && (
-          <StaffInvitationStep
-            form={form}
-            update={update}
-            onBack={handleBack}
-            onNext={handleNext}
-            addStaff={addStaffInvite}
-            removeStaff={removeStaffInvite}
-            roles={staffRoles}
-          />
-        )}
-        {step === 5 && (
-          <FirstAppointmentStep
-            onBack={handleBack}
-            onDone={() => { refresh(); setTimeout(() => navigate("/dashboard"), 600); }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ProgressBar({ step, total }) {
-  return (
-    <div className="mb-8">
-      <div className="flex h-1.5 rounded-full bg-slate-200">
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            className={`flex-1 transition-all duration-500 first:rounded-l-full last:rounded-r-full ${
-              i < step ? "bg-teal-600" : i === step ? "bg-teal-400" : "bg-slate-200"
-            } ${i > 0 && i < total ? "mx-0.5" : ""}`}
-          />
-        ))}
-      </div>
-      <p className="mt-2 text-center text-xs text-slate-500">Step {step} of {total}</p>
-    </div>
-  );
-}
-
-function Input({ label, ...props }) {
-  return (
-    <div>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      <input
-        {...props}
-        className={`mt-1 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors ${props.className || ""}`}
-      />
-    </div>
-  );
-}
-
-function Select({ label, children, ...props }) {
-  return (
-    <div>
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      <select
-        {...props}
-        className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
-      >
-        {children}
-      </select>
-    </div>
-  );
-}
-
-/* STEP 1 — Clinic Profile */
-function ClinicProfileStep({ form, update, onNext }) {
-  const canContinue = form.clinicName && form.clinicPhone;
-  return (
-    <div>
+    <div className="transition-all duration-700">
       <div className="mb-6 text-center">
         <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-teal-50">
           <Building2 className="size-5 text-teal-600" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900">Clinic Profile</h1>
-        <p className="mt-1 text-sm text-slate-500">Tell us about your clinic.</p>
+        <h1 className="text-xl font-bold text-slate-900">Name your clinic</h1>
+        <p className="mt-1 text-sm text-slate-500">Just the basics. You can customize later.</p>
       </div>
       <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Clinic Name" value={form.clinicName} onChange={(e) => update({ clinicName: e.target.value })} placeholder="HeartCare Clinic" />
-          <Select label="Clinic Type" value={form.clinicType} onChange={(e) => update({ clinicType: e.target.value })}>
-            {CLINIC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </Select>
+        <div>
+          <label className="text-xs font-medium text-slate-500">Clinic Name</label>
+          <input value={form.name} onChange={(e) => update({ name: e.target.value })}
+            placeholder="HeartCare Clinic"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+            autoFocus
+          />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Phone Number" value={form.clinicPhone} onChange={(e) => update({ clinicPhone: e.target.value })} placeholder="+250 7XX XXX XXX" />
-          <Input label="Email" type="email" value={form.clinicEmail} onChange={(e) => update({ clinicEmail: e.target.value })} placeholder="info@heartcare.com" />
+        <div>
+          <label className="text-xs font-medium text-slate-500">Phone Number</label>
+          <input value={form.phone} onChange={(e) => update({ phone: e.target.value })}
+            placeholder="+250 7XX XXX XXX"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+          />
         </div>
-        <Input label="Address" value={form.clinicAddress} onChange={(e) => update({ clinicAddress: e.target.value })} placeholder="KG 123 Ave, Kigali" />
-        <Select label="District" value={form.district} onChange={(e) => update({ district: e.target.value })}>
-          <option value="">Select district...</option>
-          {["Gasabo", "Kicukiro", "Nyarugenge", "Other"].map((d) => <option key={d} value={d}>{d}</option>)}
-        </Select>
+        <div>
+          <label className="text-xs font-medium text-slate-500">Your Role</label>
+          <select value={form.role} onChange={(e) => update({ role: e.target.value })}
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors">
+            <option value="Owner">Owner</option>
+            <option value="Admin">Admin</option>
+            <option value="Doctor">Doctor</option>
+            <option value="Receptionist">Receptionist</option>
+          </select>
+        </div>
       </div>
       <button
-        onClick={onNext}
-        disabled={!canContinue}
+        onClick={handleSubmit}
+        disabled={!canContinue || loading}
         className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50 transition-colors"
       >
+        {loading ? <Loader2 className="size-4 animate-spin" /> : null}
         Continue <ArrowRight className="size-4" />
       </button>
     </div>
   );
 }
 
-/* STEP 2 — Business Settings */
-function BusinessSettingsStep({ form, update, onBack, onComplete, loading }) {
+/* Mission Card */
+function MissionCard({ icon: Icon, title, desc, reward, onAction, actionLabel, skipLabel, onSkip, children }) {
   return (
-    <div>
+    <div className="transition-all duration-700">
       <div className="mb-6 text-center">
-        <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-teal-50">
-          <Clock className="size-5 text-teal-600" />
+        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-teal-50">
+          <Icon className="size-6 text-teal-600" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900">Business Settings</h1>
-        <p className="mt-1 text-sm text-slate-500">When does your clinic operate? This powers scheduling.</p>
+        <h1 className="text-xl font-bold text-slate-900">{title}</h1>
+        <p className="mt-1 text-sm text-slate-500">{desc}</p>
       </div>
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-500">Working Days</label>
-          <div className="grid grid-cols-7 gap-1.5">
-            {DAYS.map((d, i) => (
-              <button
-                key={d}
-                onClick={() => {
-                  const updated = [...form.workingDays];
-                  updated[i] = !updated[i];
-                  update({ workingDays: updated });
-                }}
-                className={`rounded-lg px-2 py-2 text-xs font-medium border transition-colors ${
-                  form.workingDays[i]
-                    ? "bg-teal-50 border-teal-200 text-teal-700"
-                    : "bg-white border-slate-200 text-slate-400"
-                }`}
-              >
-                {d.slice(0, 3)}
-              </button>
-            ))}
-          </div>
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2 mb-4 rounded-lg bg-amber-50 px-3 py-2">
+          <Trophy className="size-4 text-amber-600" />
+          <span className="text-xs font-medium text-amber-800">Reward: {reward}</span>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Select label="Opening Time" value={form.openTime} onChange={(e) => update({ openTime: e.target.value })}>
-            {HOUR_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-          </Select>
-          <Select label="Closing Time" value={form.closeTime} onChange={(e) => update({ closeTime: e.target.value })}>
-            {HOUR_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-          </Select>
-        </div>
-        <Select label="Timezone" value={form.timezone} onChange={(e) => update({ timezone: e.target.value })}>
-          {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
-        </Select>
+        {children}
       </div>
-      <div className="mt-5 flex gap-3">
-        <button onClick={onBack} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-          <ArrowLeft className="size-4" /> Back
+      <button
+        onClick={onAction}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 transition-colors"
+      >
+        {actionLabel || "Continue"} <ArrowRight className="size-4" />
+      </button>
+      {skipLabel && (
+        <button onClick={onSkip} className="mt-2 flex w-full items-center justify-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors">
+          {skipLabel}
         </button>
-        <button
-          onClick={onComplete}
-          disabled={loading}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50 transition-colors"
-        >
-          {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-          Save & Continue <ArrowRight className="size-4" />
-        </button>
-      </div>
+      )}
     </div>
   );
 }
 
-/* STEP 3 — WhatsApp Setup */
-function WhatsAppSetupStep({ form, update, onBack, onNext }) {
-  const [number, setNumber] = useState("");
-  if (form.whatsappSetup === null) {
+/* STEP 3 — Mission 1: Add First Patient */
+function MissionOnePatient({ clinicId, onNext }) {
+  const { user } = useAuth();
+  const [form, setForm] = useState({ name: "", phone: "", age: "" });
+  const [saving, setSaving] = useState(false);
+  const supabase = createClient();
+
+  const handleAdd = async () => {
+    if (!form.name || !clinicId) return;
+    setSaving(true);
+    try {
+      const patientPhone = form.phone || "Unknown";
+      const dob = form.age ? `${new Date().getFullYear() - Number(form.age)}-01-01` : null;
+      const { error } = await supabase.rpc("create_patient", {
+        p_clinic_id: clinicId, p_full_name: form.name, p_phone: patientPhone,
+        p_created_by: user?.id, p_date_of_birth: dob,
+      });
+      if (error) throw error;
+      toast.success("Patient added successfully");
+      onNext();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add patient");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <MissionCard
+      icon={Users} title="Add your first patient" desc="Create a patient record to start booking appointments."
+      reward="Unlock appointment system"
+      actionLabel={saving ? "Saving..." : "Add Patient"}
+      skipLabel="Skip for now"
+      onAction={handleAdd}
+      onSkip={onNext}
+    >
+      <div className="space-y-3">
+        <div>
+          <label className="text-xs font-medium text-slate-500">Patient Name</label>
+          <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+            placeholder="John Mugisha"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-500">Phone</label>
+          <input value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+            placeholder="+250 7XX XXX XXX"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-500">Age (optional)</label>
+          <input type="number" value={form.age} onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))}
+            placeholder="35"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+          />
+        </div>
+      </div>
+    </MissionCard>
+  );
+}
+
+/* STEP 4 — WhatsApp Value Preview */
+function WhatsAppPreviewStep({ onNext }) {
+  const previews = getDemoService().getDemoMessagePreviews();
+  const [choice, setChoice] = useState(null);
+
+  if (choice === "yes") {
     return (
-      <div>
+      <div className="transition-all duration-700">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-teal-50">
-            <Smartphone className="size-5 text-teal-600" />
+          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-teal-50">
+            <Smartphone className="size-6 text-teal-600" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">WhatsApp Reminders</h1>
-          <p className="mt-1 text-sm text-slate-500">Would you like automatic appointment reminders for your patients?</p>
+          <h1 className="text-xl font-bold text-slate-900">WhatsApp is ready</h1>
+          <p className="mt-1 text-sm text-slate-500">We will help you connect WhatsApp later in 2 minutes from Settings.</p>
         </div>
-        <div className="space-y-3">
-          <button
-            onClick={() => update({ whatsappSetup: "now" })}
-            className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-teal-200 hover:bg-teal-50/50 transition-colors"
-          >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
-              <Bell className="size-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Setup Now</p>
-              <p className="text-xs text-slate-500">Connect your WhatsApp Business number</p>
-            </div>
-          </button>
-          <button
-            onClick={() => { update({ whatsappSetup: "later" }); onNext(); }}
-            className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-slate-300 transition-colors"
-          >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-400">
-              <Clock className="size-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Setup Later</p>
-              <p className="text-xs text-slate-500">I'll configure this from settings</p>
-            </div>
-          </button>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm text-center">
+          <Check className="mx-auto size-8 text-teal-500 mb-2" />
+          <p className="text-sm text-slate-600">Automatic reminders will work once connected.</p>
         </div>
-        <div className="mt-5 flex gap-3">
-          <button onClick={onBack} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-            <ArrowLeft className="size-4" /> Back
-          </button>
-        </div>
+        <button onClick={onNext} className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 transition-colors">
+          Continue <ArrowRight className="size-4" />
+        </button>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="transition-all duration-700">
       <div className="mb-6 text-center">
         <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-teal-50">
-          <Smartphone className="size-5 text-teal-600" />
+          <Bell className="size-5 text-teal-600" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900">Connect WhatsApp</h1>
-        <p className="mt-1 text-sm text-slate-500">Enter your WhatsApp Business number to start sending reminders.</p>
+        <h1 className="text-xl font-bold text-slate-900">WhatsApp Reminders</h1>
+        <p className="mt-1 text-sm text-slate-500">Do you want patients to receive automatic reminders?</p>
       </div>
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <Input label="WhatsApp Business Number" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="+250 7XX XXX XXX" />
-        <p className="text-xs text-slate-500">You'll complete the Meta verification in settings.</p>
-      </div>
-      <button
-        onClick={() => { toast.success("WhatsApp preference saved"); onNext(); }}
-        disabled={!number}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50 transition-colors"
-      >
-        Continue <ArrowRight className="size-4" />
-      </button>
-      <div className="mt-5 flex gap-3">
-        <button onClick={onBack} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-          <ArrowLeft className="size-4" /> Back
+      <WhatsAppValuePreview previews={previews} />
+      <div className="mt-4 flex gap-3">
+        <button onClick={() => { setChoice("yes"); }} className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 transition-colors">
+          <Check className="size-4" /> Yes (Recommended)
+        </button>
+        <button onClick={onNext} className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+          <Clock className="size-4" /> Later
         </button>
       </div>
     </div>
   );
 }
 
-/* STEP 4 — Staff Invitation */
-function StaffInvitationStep({ form, update, onBack, onNext, addStaff, removeStaff, roles }) {
+/* STEP 5 — Mission 2: Create First Appointment */
+function MissionTwoAppointment({ clinicId, onNext }) {
+  const { user } = useAuth();
+  const [patients, setPatients] = useState([]);
+  const [form, setForm] = useState({ patientId: "", patientName: "", date: "", time: "09:00", reason: "" });
+  const [saving, setSaving] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!clinicId) return;
+    supabase.from("patients").select("id, full_name, phone").eq("clinic_id", clinicId).limit(20).then(({ data }) => {
+      if (data) setPatients(data);
+    });
+  }, [clinicId]);
+
+  const handleCreate = async () => {
+    const patient = patients.find((p) => p.id === form.patientId);
+    if (!patient) return;
+    setSaving(true);
+    try {
+      const date = form.date || new Date().toISOString().split("T")[0];
+      const endH = String(Number(form.time.split(":")[0]) + 1).padStart(2, "0");
+      const { error } = await supabase.rpc("create_appointment", {
+        p_clinic_id: clinicId, p_patient_id: patient.id,
+        p_patient_name: patient.full_name, p_patient_phone: patient.phone,
+        p_doctor_id: user?.id, p_created_by: user?.id,
+        p_appointment_date: date, p_start_time: form.time,
+        p_end_time: `${endH}:${form.time.split(":")[1] || "00"}`,
+        p_reason: form.reason || "General checkup",
+      });
+      if (error) throw error;
+      toast.success("Appointment created successfully");
+      onNext();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create appointment");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const canCreate = form.patientId && form.date;
+
   return (
-    <div>
-      <div className="mb-6 text-center">
-        <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-teal-50">
-          <Users className="size-5 text-teal-600" />
+    <MissionCard
+      icon={CalendarDays} title="Create your first appointment" desc="Schedule a visit for your patient."
+      reward="Activate WhatsApp reminders preview"
+      actionLabel={saving ? "Saving..." : "Create Appointment"}
+      skipLabel="Skip for now"
+      onAction={handleCreate}
+      onSkip={onNext}
+    >
+      <div className="space-y-3">
+        <div>
+          <label className="text-xs font-medium text-slate-500">Patient</label>
+          <select value={form.patientId} onChange={(e) => setForm((p) => ({ ...p, patientId: e.target.value }))}
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors">
+            <option value="">Select patient...</option>
+            {patients.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
         </div>
-        <h1 className="text-xl font-bold text-slate-900">Invite Your Staff</h1>
-        <p className="mt-1 text-sm text-slate-500">Add your team members. They'll get an email invitation.</p>
+        <div>
+          <label className="text-xs font-medium text-slate-500">Date</label>
+          <input type="date" value={form.date} onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
+            min={new Date().toISOString().split("T")[0]}
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-500">Time</label>
+          <input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value }))}
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
+          />
+        </div>
       </div>
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Input label="Name" value={form.newStaffName} onChange={(e) => update({ newStaffName: e.target.value })} placeholder="Dr. Name" />
-          <Input label="Email" type="email" value={form.newStaffEmail} onChange={(e) => update({ newStaffEmail: e.target.value })} placeholder="doctor@clinic.com" />
-          <Select label="Role" value={form.newStaffRole} onChange={(e) => update({ newStaffRole: e.target.value })}>
-            {roles.map((r) => <option key={r} value={r}>{r}</option>)}
-          </Select>
+    </MissionCard>
+  );
+}
+
+/* STEP 6 — Win Moment */
+function WinMomentStep({ onNext }) {
+  return <WinMomentCelebration onContinue={onNext} />;
+}
+
+/* STEP 7 — Completion + Conversion Trigger */
+function CompletionStep({ onDashboard, monthlyLoss }) {
+  return (
+    <div className="transition-all duration-700 space-y-5">
+      <div className="text-center">
+        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-emerald-50">
+          <Trophy className="size-6 text-emerald-600" />
         </div>
-        <button
-          onClick={addStaff}
-          disabled={!form.newStaffName || !form.newStaffEmail}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-        >
-          <Plus className="size-3.5" /> Add Staff Member
-        </button>
-        {form.staffInvites.length > 0 && (
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            {form.staffInvites.map((s, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="size-3.5 text-slate-400" />
-                  <span className="text-slate-700">{s.name}</span>
-                  <span className="text-xs text-slate-400">— {s.role}</span>
-                  <span className="text-xs text-slate-400">({s.email})</span>
-                </div>
-                <button onClick={() => removeStaff(i)} className="text-slate-400 hover:text-red-500 transition-colors">
-                  <X className="size-3.5" />
-                </button>
+        <h1 className="text-xl font-bold text-slate-900">Your clinic is now operational</h1>
+        <p className="mt-1 text-sm text-slate-500">You've completed the essential setup.</p>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-slate-900">Setup progress</h3>
+          <span className="text-xs font-medium text-teal-600">3/4 done</span>
+        </div>
+        <div className="space-y-2">
+          {[
+            { label: "Patient created", done: true },
+            { label: "Appointment created", done: true },
+            { label: "Staff added", done: false },
+            { label: "WhatsApp connected", done: false },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-3 rounded-lg px-3 py-2">
+              <div className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${item.done ? "bg-teal-50 border-teal-200 text-teal-600" : "border-slate-300"}`}>
+                {item.done ? <Check className="size-3" /> : null}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="mt-5 flex gap-3">
-        <button onClick={onBack} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-          <ArrowLeft className="size-4" /> Back
-        </button>
-        <button onClick={onNext} className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 transition-colors">
-          {form.staffInvites.length > 0 ? "Send Invitations & Continue" : "Skip for Now"} <ArrowRight className="size-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* STEP 5 — First Appointment */
-function FirstAppointmentStep({ onBack, onDone }) {
-  const [guidedStep, setGuidedStep] = useState(0);
-  const navigate = useNavigate();
-
-  const guides = [
-    {
-      icon: Users,
-      title: "Add Your First Patient",
-      desc: "Create a patient record so you can start booking appointments.",
-      action: "Add Patient",
-      href: "/patients/new",
-    },
-    {
-      icon: CalendarDays,
-      title: "Book Your First Appointment",
-      desc: "Schedule a visit for the patient you just added.",
-      action: "Book Appointment",
-      href: "/appointments/new",
-    },
-    {
-      icon: Bell,
-      title: "Send Your First Reminder",
-      desc: "Let ClinicOS automatically remind patients about their visit.",
-      action: "Go to Dashboard",
-      href: "/dashboard",
-    },
-  ];
-
-  const g = guides[guidedStep];
-
-  return (
-    <div>
-      <div className="mb-6 text-center">
-        <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-teal-50">
-          <CalendarDays className="size-5 text-teal-600" />
-        </div>
-        <h1 className="text-xl font-bold text-slate-900">{g.title}</h1>
-        <p className="mt-1 text-sm text-slate-500">{g.desc}</p>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex gap-2 mb-6">
-          {guides.map((_, i) => (
-            <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= guidedStep ? "bg-teal-600" : "bg-slate-200"}`} />
+              <span className={`text-xs ${item.done ? "text-slate-400 line-through" : "text-slate-700"}`}>{item.label}</span>
+            </div>
           ))}
         </div>
-        <div className="flex flex-col items-center text-center">
-          <div className="flex size-14 items-center justify-center rounded-full bg-teal-50 text-teal-600 mb-4">
-            <g.icon className="size-7" />
-          </div>
-          <p className="text-sm text-slate-600 mb-6">{g.desc}</p>
-          <button
-            onClick={() => navigate(g.href)}
-            className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-teal-500 transition-colors"
-          >
-            {g.action} <ArrowRight className="size-4" />
-          </button>
-          {guidedStep < guides.length - 1 && (
-            <button
-              onClick={() => setGuidedStep(guidedStep + 1)}
-              className="mt-3 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              Skip for now
-            </button>
-          )}
-        </div>
       </div>
 
-      {guidedStep === guides.length - 1 && (
-        <button
-          onClick={onDone}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 text-sm font-medium text-white hover:bg-teal-500 transition-colors"
-        >
-          Go to Dashboard <ArrowRight className="size-4" />
-        </button>
-      )}
+      <ConversionTrigger monthlyLoss={monthlyLoss} />
 
-      <div className="mt-5 flex gap-3">
-        <button onClick={onBack} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-          <ArrowLeft className="size-4" /> Back
-        </button>
-      </div>
+      <button
+        onClick={onDashboard}
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white hover:bg-teal-500 transition-colors"
+      >
+        Go to Dashboard <ArrowRight className="size-4" />
+      </button>
     </div>
   );
 }

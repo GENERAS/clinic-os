@@ -24,26 +24,26 @@ export function getPatientService() {
             if (existing) {
                 throw new Error(`PATIENT_EXISTS:${existing.id}:${existing.full_name}`);
             }
-            const { data, error } = await supabase
-                .from("patients")
-                .insert({
-                ...values,
-                clinic_id: clinicId,
-                created_by: userId,
-            })
-                .select()
-                .single();
+            const { data: newId, error } = await supabase
+                .rpc("create_patient", {
+                p_clinic_id: clinicId,
+                p_full_name: values.full_name,
+                p_phone: values.phone,
+                p_created_by: userId,
+                p_date_of_birth: values.date_of_birth || null,
+            });
             if (error)
                 throw error;
+            const patient = { id: newId, full_name: values.full_name, phone: values.phone };
             audit.log({
                 clinic_id: clinicId,
                 user_id: userId,
                 action: "patient created",
                 entity_type: "patients",
-                entity_id: data.id,
+                entity_id: patient.id,
                 new_value: { full_name: values.full_name, phone: values.phone },
             }).catch(() => { });
-            return data;
+            return patient;
         },
         async getPatients(clinicId, search, options) {
             const page = options?.page || 0;

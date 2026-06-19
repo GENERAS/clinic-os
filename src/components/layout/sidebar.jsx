@@ -15,7 +15,7 @@ function NavItem({ item, onClose }) {
                 "group relative flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all",
                 isActive
                     ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-white"
             )}
         >
             {isActive && (
@@ -88,13 +88,13 @@ export function Sidebar({ isOpen, onClose }) {
             <Link
               to="/admin"
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+              className="text-muted-foreground hover:text-white mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
             >
               <Shield className="size-[18px] shrink-0" />
               Admin Portal
             </Link>
           )}
-          <button onClick={logout} className="text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+          <button onClick={logout} className="text-muted-foreground hover:text-white flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
             <LogOut className="size-[18px] shrink-0"/>
             Sign out
           </button>

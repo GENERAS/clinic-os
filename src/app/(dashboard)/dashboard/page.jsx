@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { CalendarDays, Users, Package, Bell, RefreshCw, AlertTriangle, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
@@ -27,6 +27,10 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, clinic: authClinic, permissions } = useAuth();
   const clinicId = authClinic?.id;
+
+  if (authClinic?.id && authClinic?.onboarding_completed === false) {
+    return <Navigate to="/onboarding" replace />;
+  }
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

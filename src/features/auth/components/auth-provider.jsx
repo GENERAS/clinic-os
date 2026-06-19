@@ -36,7 +36,7 @@ async function loadUserData(supabaseUserId) {
     if (userData.clinic_id) {
         const { data: clinic } = await supabase
             .from("clinics")
-            .select("id, name, slug")
+            .select("id, name, slug, onboarding_completed")
             .eq("id", userData.clinic_id)
             .maybeSingle();
         clinicData = clinic;
@@ -69,6 +69,7 @@ async function loadUserData(supabaseUserId) {
             id: clinicData.id ?? userData.clinic_id,
             name: clinicData.name ?? "",
             slug: clinicData.slug ?? "",
+            onboarding_completed: clinicData?.onboarding_completed ?? true,
         },
         roles,
         permissions,
