@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { CalendarDays, Users, Package, Bell, RefreshCw, AlertTriangle, ArrowRight } from "lucide-react";
+import { CalendarDays, Users, Package, Bell, RefreshCw, AlertTriangle, ArrowRight, Stethoscope, Beaker, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { RealtimeStatusBadge } from "@/components/shared/realtime-status-badge";
@@ -36,6 +37,7 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState({ subscription: null, plan: null, loading: true });
+  const [clinicalCounts, setClinicalCounts] = useState({ consultations: 0, pendingLabs: 0, triageWaiting: 0 });
   const dashboardService = useMemo(() => getDashboardService(), []);
   const appointmentService = useMemo(() => getAppointmentService(), []);
   const subscriptionService = useMemo(() => getSubscriptionService(), []);
@@ -66,6 +68,15 @@ export default function DashboardPage() {
     try {
       const overview = await dashboardService.getDashboardOverview(clinicId);
       setData(overview);
+
+      const today = new Date().toISOString().split("T")[0];
+      const supabase = createClient();
+      const [{ count: consultations }, { count: pendingLabs }, { count: triageWaiting }] = await Promise.all([
+        supabase.from("consultations").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId).gte("created_at", today),
+        supabase.from("investigations").select("*", { count: "exact", head: true }).in("status", ["ordered", "sample_collected"]),
+        supabase.from("triage_records").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("status", "waiting"),
+      ]);
+      setClinicalCounts({ consultations: consultations || 0, pendingLabs: pendingLabs || 0, triageWaiting: triageWaiting || 0 });
     } catch {
       if (!silent) toast.error("Failed to load dashboard");
     } finally {
@@ -156,10 +167,7 @@ export default function DashboardPage() {
 
       {/* Live KPI strip — updates in real-time via Supabase subscription */}
       {data && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-          {canViewAppointments && (
-            <MetricCard label="Today" value={liveKpis.today_appointments} icon={<CalendarDays className="size-[18px] text-primary"/>} onClick={() => navigate("/appointments/today")}/>
-          )}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
           <MetricCard label="Waiting" value={liveKpis.waiting} icon={<Users className="size-[18px] text-amber-500"/>} onClick={() => navigate("/appointments/today")}/>
           <MetricCard label="Completed" value={liveKpis.completed} icon={<CalendarDays className="size-[18px] text-green-500"/>} onClick={() => navigate("/appointments/today")}/>
           {liveKpis.whatsapp_bookings > 0 && (
@@ -173,6 +181,14 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+
+      {/* Clinical KPIs */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <MetricCard label="Consultations Today" value={clinicalCounts.consultations} icon={<Stethoscope className="size-[18px] text-purple-500"/>} onClick={() => navigate("/consultations/new")}/>
+        <MetricCard label="Pending Labs" value={clinicalCounts.pendingLabs} icon={<Beaker className="size-[18px] text-amber-500"/>} onClick={() => navigate("/investigations")}/>
+        <MetricCard label="Triage Waiting" value={clinicalCounts.triageWaiting} icon={<Heart className="size-[18px] text-rose-500"/>} onClick={() => navigate("/triage")}/>
+        <MetricCard label="Today Appointments" value={liveKpis.today_appointments} icon={<CalendarDays className="size-[18px] text-blue-500"/>} onClick={() => navigate("/appointments/today")}/>
+      </div>
 
       {/* Main grid */}
       <div className="grid gap-5 lg:grid-cols-3">

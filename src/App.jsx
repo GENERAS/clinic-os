@@ -53,6 +53,9 @@ const InventoryItemDetailPage = lazy(() => import("@/app/(dashboard)/inventory/[
 const NewConsultationPage = lazy(() => import("@/app/(dashboard)/consultations/new/page"));
 const ConsultationDetailPage = lazy(() => import("@/app/(dashboard)/consultations/[id]/page"));
 const PatientVisitHistoryPage = lazy(() => import("@/app/(dashboard)/patients/[id]/visits/page"));
+const TriageQueuePage = lazy(() => import("@/app/(dashboard)/triage/page"));
+const NewTriagePage = lazy(() => import("@/app/(dashboard)/triage/new/page"));
+const InvestigationsPage = lazy(() => import("@/app/(dashboard)/investigations/page"));
 const NotificationsPage = lazy(() => import("@/app/(dashboard)/notifications/page"));
 const SettingsPage = lazy(() => import("@/app/(dashboard)/settings/page"));
 const ClinicSettingsPage = lazy(() => import("@/app/(dashboard)/settings/clinic/page"));
@@ -140,6 +143,9 @@ export default function App() {
                 <Route path="/patients/:id/visits" element={<PatientVisitHistoryPage />}/>
                 <Route path="/consultations/new" element={<NewConsultationPage />}/>
                 <Route path="/consultations/:id" element={<ConsultationDetailPage />}/>
+                <Route path="/triage" element={<TriageQueuePage />}/>
+                <Route path="/triage/new" element={<NewTriagePage />}/>
+                <Route path="/investigations" element={<InvestigationsPage />}/>
                 <Route path="/appointments" element={<AppointmentsPage />}/>
                 <Route path="/appointments/new" element={<NewAppointmentPage />}/>
                 <Route path="/appointments/today" element={<TodayAppointmentsPage />}/>
