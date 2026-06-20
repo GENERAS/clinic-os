@@ -58,6 +58,7 @@ const NewTriagePage = lazy(() => import("@/app/(dashboard)/triage/new/page"));
 const InvestigationsPage = lazy(() => import("@/app/(dashboard)/investigations/page"));
 const ConsultationBillingPage = lazy(() => import("@/app/(dashboard)/consultations/[id]/billing/page"));
 const FinancialsPage = lazy(() => import("@/app/(dashboard)/financials/page"));
+const PharmacyPage = lazy(() => import("@/app/(dashboard)/pharmacy/page"));
 const NotificationsPage = lazy(() => import("@/app/(dashboard)/notifications/page"));
 const SettingsPage = lazy(() => import("@/app/(dashboard)/settings/page"));
 const ClinicSettingsPage = lazy(() => import("@/app/(dashboard)/settings/clinic/page"));
@@ -149,6 +150,7 @@ export default function App() {
                 <Route path="/triage" element={<TriageQueuePage />}/>
                 <Route path="/triage/new" element={<NewTriagePage />}/>
                 <Route path="/investigations" element={<InvestigationsPage />}/>
+                <Route path="/pharmacy" element={<PharmacyPage />}/>
                 <Route path="/financials" element={<FinancialsPage />}/>
                 <Route path="/appointments" element={<AppointmentsPage />}/>
                 <Route path="/appointments/new" element={<NewAppointmentPage />}/>
