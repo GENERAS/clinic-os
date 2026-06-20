@@ -22,11 +22,11 @@ export function getReportService() {
     async function getRevenueReport(clinicId, period = "today") {
         const { start, end } = dateRange(period);
         const [invoices, payments, claims] = await Promise.all([
-            supabase.from("billing_invoices").select("id, total_amount, status, invoice_date").eq("clinic_id", clinicId).gte("invoice_date", start).lte("invoice_date", end),
-            supabase.from("patient_payments").select("amount, payment_method, paid_at").eq("clinic_id", clinicId).gte("paid_at", start).lte("paid_at", end),
-            supabase.from("insurance_claims").select("id, total_amount, status, submitted_at").eq("clinic_id", clinicId).gte("submitted_at", start).lte("submitted_at", end),
+            supabase.from("billing_invoices").select("id, total, status, created_at").eq("clinic_id", clinicId).gte("created_at", start).lte("created_at", end),
+            supabase.from("patient_payments").select("amount, payment_method, payment_date").eq("clinic_id", clinicId).gte("payment_date", start).lte("payment_date", end),
+            supabase.from("insurance_claims").select("id, total_amount, status, submission_date").eq("clinic_id", clinicId).gte("submission_date", start).lte("submission_date", end),
         ]);
-        const billed = invoices.data?.reduce((s, i) => s + Number(i.total_amount), 0) || 0;
+        const billed = invoices.data?.reduce((s, i) => s + Number(i.total), 0) || 0;
         const collected = payments.data?.reduce((s, p) => s + Number(p.amount), 0) || 0;
         const methodBreakdown = (payments.data || []).reduce((acc, p) => { acc[p.payment_method] = (acc[p.payment_method] || 0) + Number(p.amount); return acc; }, {});
         const claimsByStatus = (claims.data || []).reduce((acc, c) => { acc[c.status] = (acc[c.status] || 0) + Number(c.total_amount); return acc; }, {});
@@ -92,7 +92,7 @@ export function getReportService() {
 
     async function getInsuranceReport(clinicId, period = "today") {
         const { start, end } = dateRange(period);
-        const data = await supabase.from("insurance_claims").select("id, provider, total_amount, status, submitted_at, paid_at, rejection_reason").eq("clinic_id", clinicId).gte("submitted_at", start).lte("submitted_at", end);
+        const data = await supabase.from("insurance_claims").select("id, provider, total_amount, status, submission_date, rejection_reason").eq("clinic_id", clinicId).gte("submission_date", start).lte("submission_date", end);
         const claims = data.data || [];
         const byStatus = claims.reduce((acc, c) => { acc[c.status] = (acc[c.status] || 0) + 1; return acc; }, {});
         const byProvider = claims.reduce((acc, c) => {
