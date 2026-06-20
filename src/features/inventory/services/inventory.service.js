@@ -316,6 +316,56 @@ export function getInventoryService() {
                 };
             });
         },
+        async getBatchesForItem(clinicId, itemId) {
+            const { data, error } = await supabase
+                .from("inventory_batches")
+                .select("*")
+                .eq("clinic_id", clinicId)
+                .eq("inventory_item_id", itemId)
+                .order("expiry_date", { ascending: true });
+            if (error) throw error;
+            return data || [];
+        },
+        async createInventoryBatch(clinicId, itemId, values, userId) {
+            const { data: item } = await supabase
+                .from("inventory_items")
+                .select("current_stock")
+                .eq("id", itemId)
+                .eq("clinic_id", clinicId)
+                .single();
+            if (!item) throw new Error("Item not found");
+            const { data, error } = await supabase
+                .from("inventory_batches")
+                .insert({
+                    clinic_id: clinicId,
+                    inventory_item_id: itemId,
+                    batch_number: values.batch_number,
+                    expiry_date: values.expiry_date,
+                    quantity: values.quantity,
+                    cost_price: values.cost_price || 0,
+                    notes: values.notes || null,
+                })
+                .select()
+                .single();
+            if (error) throw error;
+            const previousStock = item.current_stock;
+            const newStock = previousStock + values.quantity;
+            await supabase
+                .from("inventory_items")
+                .update({ current_stock: newStock, updated_at: new Date().toISOString() })
+                .eq("id", itemId)
+                .eq("clinic_id", clinicId);
+            await recordTransaction(clinicId, itemId, "stock_in", values.quantity, previousStock, newStock, `Batch received: ${values.batch_number}`, userId);
+            audit.log({
+                clinic_id: clinicId,
+                user_id: userId,
+                action: "inventory batch received",
+                entity_type: "inventory_batches",
+                entity_id: data.id,
+                new_value: { batch_number: values.batch_number, quantity: values.quantity, expiry_date: values.expiry_date },
+            }).catch(() => { });
+            return data;
+        },
         async getStats(clinicId) {
             const { data, error } = await supabase
                 .from("inventory_items")

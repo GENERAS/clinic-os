@@ -11,6 +11,14 @@ export function getStaffService() {
     const supabase = createClient();
     const audit = getAuditService();
     return {
+        async getAllRoles() {
+            const { data, error } = await supabase
+                .from("roles")
+                .select("id, name")
+                .order("name");
+            if (error) throw error;
+            return data || [];
+        },
         async getStaff(clinicId) {
             const { data: users, error } = await supabase
                 .from("users")

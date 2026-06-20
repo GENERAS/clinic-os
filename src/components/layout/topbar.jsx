@@ -5,12 +5,13 @@ import { Bell, Menu } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getNotificationService } from "@/features/notifications/services/notification.service";
 export function Topbar({ onMenuClick, className }) {
-    const { user } = useAuth();
+    const { user, clinic: authClinic } = useAuth();
+    const clinicId = authClinic?.id;
     const [unreadCount, setUnreadCount] = useState(0);
     useEffect(() => {
-        if (!user?.clinicId) return;
-        getNotificationService().getUnreadCount(user.clinicId).then(setUnreadCount).catch(() => {});
-    }, [user?.clinicId]);
+        if (!clinicId) return;
+        getNotificationService().getUnreadCount(clinicId).then(setUnreadCount).catch(() => {});
+    }, [clinicId]);
     const initials = user?.fullName
         ? user.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
         : user?.email?.charAt(0).toUpperCase() ?? "?";

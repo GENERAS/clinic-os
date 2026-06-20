@@ -229,26 +229,31 @@ export class PharmacyService {
             this.supabase
                 .from("prescriptions")
                 .select("*", { count: "exact", head: true })
+                .eq("clinic_id", clinicId)
                 .in("dispensed_status", ["pending", "partial"]),
             this.supabase
                 .from("dispensations")
                 .select("*", { count: "exact", head: true })
+                .eq("clinic_id", clinicId)
                 .gte("dispensed_at", today),
             this.getNearExpiryBatches(clinicId, 90),
             this.supabase
                 .from("inventory_items")
                 .select("id, name, current_stock, minimum_stock")
                 .eq("clinic_id", clinicId)
-                .gt("current_stock", 0)
-                .lte("current_stock", "minimum_stock"),
+                .gt("current_stock", 0),
         ]);
+
+        const filteredLowStock = (lowStock || []).filter(
+            item => item.current_stock <= item.minimum_stock
+        );
 
         return {
             pending_prescriptions: pendingCount || 0,
             dispensed_today: dispensedToday || 0,
             near_expiry_batches: nearExpiry.length,
             near_expiry_items: nearExpiry,
-            low_stock_items: lowStock || [],
+            low_stock_items: filteredLowStock,
         };
     }
 }

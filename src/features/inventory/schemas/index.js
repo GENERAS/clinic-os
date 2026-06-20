@@ -19,3 +19,10 @@ export const stockAdjustmentSchema = z.object({
     quantity: z.coerce.number().int().positive("Quantity must be positive"),
     reason: z.string().optional().nullable(),
 });
+export const batchReceiveSchema = z.object({
+    batch_number: z.string().min(1, "Batch/Lot number is required").max(100),
+    expiry_date: z.string().min(1, "Expiry date is required"),
+    quantity: z.coerce.number().int().positive("Quantity must be positive"),
+    cost_price: z.coerce.number().min(0, "Cost price cannot be negative").optional().nullable(),
+    notes: z.string().optional().nullable(),
+});

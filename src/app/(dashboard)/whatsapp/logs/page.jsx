@@ -5,9 +5,9 @@ import { MessageLogTable } from "@/features/whatsapp/components/MessageLogTable"
 import { getWhatsAppService } from "@/features/whatsapp/services/whatsapp.service";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 export default function WhatsAppLogsPage() {
-    const { user } = useAuth();
+    const { clinic: authClinic } = useAuth();
     const whatsapp = getWhatsAppService();
-    const clinicId = user?.clinicId;
+    const clinicId = authClinic?.id;
     const [logs, setLogs] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);

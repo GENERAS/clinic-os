@@ -88,7 +88,7 @@ plansData
       const usersRes = await supabase.from(
 "users"
 ).select(
-"clinic_id, id, full_name, last_login_at"
+"clinic_id, id, full_name, last_login_at, is_super_admin"
 );
       const users = usersRes.data ?? [];
       const clinicLastLogins = {

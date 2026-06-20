@@ -7,8 +7,8 @@ import { getNotificationService } from "@/features/notifications/services/notifi
 import { NotificationList } from "@/features/notifications/components/notification-list";
 import { toast } from "sonner";
 export default function NotificationsPage() {
-    const { user } = useAuth();
-    const clinicId = user?.clinicId;
+    const { clinic: authClinic } = useAuth();
+    const clinicId = authClinic?.id;
     const service = getNotificationService();
     const [notifications, setNotifications] = useState([]);
     const [total, setTotal] = useState(0);

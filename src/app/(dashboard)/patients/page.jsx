@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Loader2, Users } from "lucide-react";
+import { Plus, Loader2, Users, Search } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getPatientService } from "@/features/patients/services/patient.service";
@@ -53,9 +53,7 @@ export default function PatientsPage() {
       <div className="relative max-w-md">
         <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} placeholder="Search by name or phone..." className="w-full rounded-lg border bg-background px-3 py-2.5 pl-10 text-sm"/>
         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-          <svg className="size-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-          </svg>
+          <Search className="size-4 text-muted-foreground" />
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Package, Edit, PackageOpen } from "lucide-react";
+import { ArrowLeft, Loader2, Package, Edit, PackageOpen, PackagePlus } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -9,6 +9,7 @@ import { getInventoryService } from "@/features/inventory/services/inventory.ser
 import { InventoryStatusBadge } from "@/features/inventory/components/inventory-status-badge";
 import { TransactionHistoryTable } from "@/features/inventory/components/transaction-history-table";
 import { StockAdjustmentDialog } from "@/features/inventory/components/stock-adjustment-dialog";
+import { BatchReceiveDialog } from "@/features/inventory/components/batch-receive-dialog";
 import { toast } from "sonner";
 export default function InventoryItemDetailPage() {
     const { id } = useParams();
@@ -16,8 +17,10 @@ export default function InventoryItemDetailPage() {
     const clinicId = authClinic?.id;
     const [item, setItem] = useState(null);
     const [transactions, setTransactions] = useState([]);
+    const [batches, setBatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAdjust, setShowAdjust] = useState(false);
+    const [showReceiveBatch, setShowReceiveBatch] = useState(false);
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const service = useMemo(() => getInventoryService(), []);
@@ -29,8 +32,12 @@ export default function InventoryItemDetailPage() {
             const data = await service.getInventoryItemById(clinicId, id);
             setItem(data);
             if (data) {
-                const txs = await service.getTransactions(clinicId, id);
+                const [txs, bts] = await Promise.all([
+                    service.getTransactions(clinicId, id),
+                    service.getBatchesForItem(clinicId, id),
+                ]);
                 setTransactions(txs);
+                setBatches(bts);
             }
         }
         catch {
@@ -43,6 +50,17 @@ export default function InventoryItemDetailPage() {
     useEffect(() => {
         loadItem();
     }, [loadItem]);
+    const handleBatchReceive = async (values) => {
+        if (!clinicId || !user) return;
+        try {
+            await service.createInventoryBatch(clinicId, id, values, user.id);
+            toast.success("Batch received");
+            setShowReceiveBatch(false);
+            await loadItem();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to receive batch");
+        }
+    };
     const handleAdjust = async (values) => {
         if (!clinicId || !user)
             return;
@@ -126,6 +144,10 @@ export default function InventoryItemDetailPage() {
           <PackageOpen className="size-3.5"/>
           Adjust Stock
         </button>
+        <button onClick={() => setShowReceiveBatch(true)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted">
+          <PackagePlus className="size-3.5"/>
+          Receive Batch
+        </button>
         {!editing && (<button onClick={startEditing} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted">
             <Edit className="size-3.5"/>
             Edit Details
@@ -208,11 +230,44 @@ export default function InventoryItemDetailPage() {
           <p className="text-sm">{item.description}</p>
         </SectionCard>)}
 
+      {/* Batches */}
+      <SectionCard title="Batches / Lots">
+        {batches.length === 0 ? (<p className="text-sm text-muted-foreground">No batches recorded yet.</p>) : (
+          <div className="space-y-2">
+            {batches.map((b) => {
+              const expired = new Date(b.expiry_date) < new Date();
+              return (<div key={b.id} className={`flex items-center justify-between rounded-lg border p-3 ${expired ? "border-red-200 bg-red-50" : b.quantity <= 0 ? "opacity-50" : ""}`}>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{b.batch_number}</span>
+                    {b.quantity > 0 ? (
+                      <span className={`text-xs ${expired ? "text-red-600 font-medium" : "text-muted-foreground"}`}>
+                        Exp: {new Date(b.expiry_date).toLocaleDateString("en-RW", { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Depleted</span>
+                    )}
+                  </div>
+                  {b.notes && <p className="mt-0.5 truncate text-xs text-muted-foreground">{b.notes}</p>}
+                </div>
+                <div className="flex items-center gap-3">
+                  {b.cost_price > 0 && (<span className="text-xs text-muted-foreground">{b.cost_price?.toLocaleString()} RWF</span>)}
+                  <span className={`text-sm font-semibold tabular-nums ${b.quantity <= 0 ? "text-muted-foreground" : expired ? "text-red-600" : ""}`}>
+                    {b.quantity}
+                  </span>
+                </div>
+              </div>);
+            })}
+          </div>
+        )}
+      </SectionCard>
+
       {/* Transaction History */}
       <SectionCard title="Transaction History">
         <TransactionHistoryTable transactions={transactions}/>
       </SectionCard>
 
       <StockAdjustmentDialog open={showAdjust} onClose={() => setShowAdjust(false)} onSubmit={handleAdjust}/>
+      <BatchReceiveDialog open={showReceiveBatch} onClose={() => setShowReceiveBatch(false)} onSubmit={handleBatchReceive}/>
     </div>);
 }

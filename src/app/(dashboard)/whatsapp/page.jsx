@@ -130,8 +130,8 @@ function TemplateEditor({ templates, clinicId, onSave }) {
 
 export default function WhatsAppPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const clinicId = user?.clinicId;
+  const { clinic: authClinic } = useAuth();
+  const clinicId = authClinic?.id;
   const whatsapp = getWhatsAppService();
   const automation = getWhatsAppAutomationService();
   const [loading, setLoading] = useState(true);

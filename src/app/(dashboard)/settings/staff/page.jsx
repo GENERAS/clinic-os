@@ -28,11 +28,12 @@ export default function StaffPage() {
             return;
         setLoading(true);
         try {
-            const data = await staffService.getStaff(clinicId);
+            const [data, allRoles] = await Promise.all([
+                staffService.getStaff(clinicId),
+                staffService.getAllRoles(),
+            ]);
             setStaff(data);
-            const allRoles = new Map();
-            data.forEach((m) => m.roles.forEach((r) => allRoles.set(r.id, r)));
-            setRolesList(Array.from(allRoles.values()));
+            setRolesList(allRoles);
         }
         catch {
             console.error("Failed to load staff");

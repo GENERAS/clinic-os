@@ -25,6 +25,7 @@ export default function TriageQueuePage() {
     const clinicId = authClinic?.id;
     const service = useMemo(() => getTriageService(), []);
     const [records, setRecords] = useState([]);
+    const [completedRecords, setCompletedRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState("active");
@@ -33,8 +34,12 @@ export default function TriageQueuePage() {
         if (!clinicId) return;
         setLoading(true);
         try {
-            const data = await service.getTriageQueue(clinicId);
-            setRecords(data);
+            const [active, completed] = await Promise.all([
+                service.getTriageQueue(clinicId),
+                service.getCompletedTriage(clinicId),
+            ]);
+            setRecords(active);
+            setCompletedRecords(completed);
         } catch {
             toast.error("Failed to load triage queue");
         } finally {
@@ -45,11 +50,11 @@ export default function TriageQueuePage() {
     useEffect(() => { load(); }, [load]);
 
     const filtered = useMemo(() => {
-        const items = records.filter(r => tab === "active" ? r.status !== "completed" : r.status === "completed");
+        const items = tab === "active" ? records : completedRecords;
         if (!search.trim()) return items;
         const q = search.toLowerCase();
         return items.filter(r => (r.patients?.full_name || "").toLowerCase().includes(q));
-    }, [records, search, tab]);
+    }, [records, completedRecords, search, tab]);
 
     const handleMoveToConsultation = useCallback(async (recordId) => {
         try {

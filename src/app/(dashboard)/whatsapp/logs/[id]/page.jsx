@@ -8,9 +8,9 @@ import { getWhatsAppService } from "@/features/whatsapp/services/whatsapp.servic
 import { useAuth } from "@/features/auth/hooks/use-auth";
 export default function MessageDetailPage() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { clinic: authClinic } = useAuth();
     const whatsapp = getWhatsAppService();
-    const clinicId = user?.clinicId;
+    const clinicId = authClinic?.id;
     const [message, setMessage] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

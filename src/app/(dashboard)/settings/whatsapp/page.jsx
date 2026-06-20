@@ -32,9 +32,9 @@ function StepIndicator({ currentStep, steps }) {
 }
 
 export default function WhatsAppSettingsPage() {
-    const { user } = useAuth();
+    const { clinic: authClinic, user } = useAuth();
     const whatsapp = getWhatsAppService();
-    const clinicId = user?.clinicId;
+    const clinicId = authClinic?.id;
 
     const [settings, setSettings] = useState(null);
     const [credentials, setCredentials] = useState(null);
