@@ -1,6 +1,7 @@
 "use client";
 import { useRef } from "react";
-import { Printer, Download, MessageSquare, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Printer, Download, MessageSquare, FileText, CreditCard } from "lucide-react";
 
 function formatFrequency(freq) {
     const map = {
@@ -212,20 +213,26 @@ export function ConsultationView({ consultation, clinic, onBack }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                     <h2 className="text-lg font-semibold">Consultation Detail</h2>
                     <p className="text-xs text-muted-foreground">
                         {cDate.toLocaleDateString("en-RW", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </p>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    consultation.status === "completed" ? "bg-emerald-50 text-emerald-700" :
-                    consultation.status === "in_progress" ? "bg-amber-50 text-amber-700" :
-                    "bg-red-50 text-red-700"
-                }`}>
-                    {consultation.status === "completed" ? "Completed" : consultation.status === "in_progress" ? "In Progress" : "Cancelled"}
-                </span>
+                <div className="flex items-center gap-2">
+                    <Link to={`/consultations/${consultation.id}/billing`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium text-emerald-600 border-emerald-200 hover:bg-emerald-50 transition-colors">
+                        <CreditCard className="size-3.5" /> Billing
+                    </Link>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        consultation.status === "completed" ? "bg-emerald-50 text-emerald-700" :
+                        consultation.status === "in_progress" ? "bg-amber-50 text-amber-700" :
+                        "bg-red-50 text-red-700"
+                    }`}>
+                        {consultation.status === "completed" ? "Completed" : consultation.status === "in_progress" ? "In Progress" : "Cancelled"}
+                    </span>
+                </div>
             </div>
 
             <PrescriptionPreview consultation={consultation} clinic={clinic} />
