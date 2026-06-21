@@ -1,8 +1,9 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { CalendarDays, Users, Package, Bell, RefreshCw, AlertTriangle, ArrowRight, Stethoscope, Beaker, Heart } from "lucide-react";
+import { CalendarDays, Users, Package, Bell, RefreshCw, AlertTriangle, ArrowRight, Stethoscope, Beaker, Heart, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { cn } from "@/utils/cn";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { RealtimeStatusBadge } from "@/components/shared/realtime-status-badge";
@@ -14,10 +15,8 @@ import { createClient } from "@/lib/supabase/client";
 import { MetricCard } from "@/features/dashboard/components/metric-card";
 import { AppointmentSummaryCard } from "@/features/dashboard/components/appointment-summary-card";
 import { AlertCard } from "@/features/dashboard/components/alert-card";
-import { ActivityFeedCard } from "@/features/dashboard/components/activity-feed-card";
-import { ClinicOverviewCard } from "@/features/dashboard/components/clinic-overview-card";
-import { TaskCard } from "@/features/dashboard/components/task-card";
 import { NotificationsPanel } from "@/features/dashboard/components/notifications-panel";
+import { ClinicOverviewCard } from "@/features/dashboard/components/clinic-overview-card";
 import { useRealtimeAppointments } from "@/hooks/useRealtimeAppointments";
 import { ActivationChecklist } from "@/components/dashboard/activation-checklist";
 import { SubscriptionStatusWidget } from "@/features/subscription/components/subscription-status-widget";
@@ -28,11 +27,11 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, clinic: authClinic, permissions } = useAuth();
   const clinicId = authClinic?.id;
-  const [showLoginActivity, setShowLoginActivity] = useState(false);
 
   if (authClinic?.id && authClinic?.onboarding_completed === false) {
     return <Navigate to="/onboarding" replace />;
   }
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,7 +54,6 @@ export default function DashboardPage() {
     waiting: todayAppts.filter((a) => a.status === "arrived").length,
     completed: todayAppts.filter((a) => a.status === "completed").length,
     no_shows: todayAppts.filter((a) => a.status === "no_show" || a.status === "cancelled").length,
-    whatsapp_bookings: todayAppts.filter((a) => a.source === "whatsapp").length,
   }), [todayAppts]);
 
   const loadDashboard = useCallback(async (silent = false) => {
@@ -141,7 +139,7 @@ export default function DashboardPage() {
     return (
       <div className="flex justify-center py-20">
         <div className="flex flex-col items-center gap-2">
-          <div className="border-primary size-6 animate-spin rounded-full border-2 border-t-transparent"/>
+          <div className="border-primary size-6 animate-spin rounded-full border-2 border-t-transparent" />
           <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
         </div>
       </div>
@@ -151,51 +149,63 @@ export default function DashboardPage() {
   const canViewAppointments = can(permissions, "view_appointments");
   const canViewInventory = can(permissions, "view_inventory");
   const canViewPatients = can(permissions, "view_patients");
-
   const hasAlerts = data && (data.lowStockAlerts?.length > 0 || data.tasks?.length > 0);
+  const hasNotifications = data && data.notifications?.length > 0;
+  const isEmpty = data && data.stats.today_appointments === 0 && data.stats.total_patients === 0 && data.stats.total_inventory_items === 0 && data.tasks?.length === 0;
 
   return (
-    <div className="space-y-5">
-      <PageHeader title="Dashboard" description="Is the clinic running normally today?">
+    <div className="space-y-4">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-xs text-slate-500">{clinic?.name} &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+        </div>
         <div className="flex items-center gap-2">
-          <RealtimeStatusBadge status={realtimeStatus}/>
-          <button onClick={() => loadDashboard(true)} disabled={refreshing} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 disabled:opacity-50 transition-colors">
-            <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`}/>
+          <RealtimeStatusBadge status={realtimeStatus} />
+          <button onClick={() => loadDashboard(true)} disabled={refreshing} className="inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm">
+            <RefreshCw className={cn("size-3.5", refreshing && "animate-spin")} />
             Refresh
           </button>
         </div>
-      </PageHeader>
+      </div>
 
-      {/* Live KPI strip — updates in real-time via Supabase subscription */}
+      {/* ── Big Number Strip ── */}
       {data && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-          <MetricCard label="Waiting" value={liveKpis.waiting} icon={<Users className="size-[18px] text-amber-500"/>} onClick={() => navigate("/appointments/today")}/>
-          <MetricCard label="Completed" value={liveKpis.completed} icon={<CalendarDays className="size-[18px] text-green-500"/>} onClick={() => navigate("/appointments/today")}/>
-          {liveKpis.whatsapp_bookings > 0 && (
-            <MetricCard label="WhatsApp" value={liveKpis.whatsapp_bookings} icon={<Bell className="size-[18px] text-blue-500"/>} onClick={() => navigate("/appointments/today")}/>
-          )}
-          {canViewPatients && (
-            <MetricCard label="Patients" value={data.stats.total_patients} icon={<Users className="size-[18px] text-primary"/>} onClick={() => navigate("/patients")}/>
-          )}
-          {hasAlerts && (
-            <MetricCard label="Alerts" value={(data.lowStockAlerts?.length || 0) + (data.tasks?.length || 0)} icon={<AlertTriangle className="size-[18px] text-amber-500"/>} onClick={() => navigate("/notifications")}/>
+        <div className="grid grid-cols-3 gap-3 md:grid-cols-5">
+          <MetricCard label="Waiting now" value={liveKpis.waiting} icon={<Users className="size-4 text-amber-500" />} onClick={() => navigate("/appointments/today")} />
+          <MetricCard label="Today" value={liveKpis.today_appointments} icon={<CalendarDays className="size-4 text-blue-500" />} onClick={() => navigate("/appointments/today")} />
+          <MetricCard label="Completed" value={liveKpis.completed} icon={<CheckCircle2 className="size-4 text-green-500" />} onClick={() => navigate("/appointments/today")} />
+          <MetricCard label="Consultations" value={clinicalCounts.consultations} icon={<Stethoscope className="size-4 text-purple-500" />} onClick={() => navigate("/consultations/new")} />
+          {hasAlerts ? (
+            <MetricCard label="Alerts" value={(data.lowStockAlerts?.length || 0) + (data.tasks?.length || 0)} icon={<AlertTriangle className="size-4 text-rose-500" />} onClick={() => navigate("/notifications")} />
+          ) : (
+            <MetricCard label="All clear" value={0} icon={<CheckCircle2 className="size-4 text-green-500" />} />
           )}
         </div>
       )}
 
-      {/* Clinical KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard label="Consultations Today" value={clinicalCounts.consultations} icon={<Stethoscope className="size-[18px] text-purple-500"/>} onClick={() => navigate("/consultations/new")}/>
-        <MetricCard label="Pending Labs" value={clinicalCounts.pendingLabs} icon={<Beaker className="size-[18px] text-amber-500"/>} onClick={() => navigate("/investigations")}/>
-        <MetricCard label="Triage Waiting" value={clinicalCounts.triageWaiting} icon={<Heart className="size-[18px] text-rose-500"/>} onClick={() => navigate("/triage")}/>
-        <MetricCard label="Today Appointments" value={liveKpis.today_appointments} icon={<CalendarDays className="size-[18px] text-blue-500"/>} onClick={() => navigate("/appointments/today")}/>
-      </div>
+      {/* ── Main 2-col grid ── */}
+      <div className="grid gap-4 lg:grid-cols-3">
 
-      {/* Main grid */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="space-y-5 lg:col-span-2">
-          {canViewAppointments && (
-            <SectionCard title="Today's Appointments" actions={data?.todayAppointments?.length > 0 && <button onClick={() => navigate("/appointments/today")} className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">View all <ArrowRight className="inline size-3 ml-0.5"/></button>}>
+        {/* ── Left: Appointments ── */}
+        <div className="lg:col-span-2 space-y-4">
+          {canViewAppointments && !isEmpty && (
+            <SectionCard
+              title={
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="size-4 text-blue-500" />
+                  <span>Today's Appointments</span>
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">{liveKpis.today_appointments}</span>
+                </div>
+              }
+              actions={data?.todayAppointments?.length > 0 && (
+                <button onClick={() => navigate("/appointments/today")} className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                  View all <ArrowRight className="inline size-3 ml-0.5" />
+                </button>
+              )}
+            >
               <AppointmentSummaryCard
                 todayAppointments={todayAppts}
                 upcomingAppointments={todayAppts.filter((a) => a.status === "scheduled" || a.status === "confirmed" || a.status === "arrived")}
@@ -205,79 +215,121 @@ export default function DashboardPage() {
             </SectionCard>
           )}
 
-          {data && data.recentActivity?.length > 0 && (
-            <SectionCard title="Activity">
-              <button
-                type="button"
-                onClick={() => setShowLoginActivity(!showLoginActivity)}
-                className="mb-3 w-full rounded-lg border px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                {showLoginActivity ? "Hide" : "Show"} login activity
+          {/* ── Clinical row (compact 3-col inside left) ── */}
+          {!isEmpty && (
+            <div className="grid grid-cols-3 gap-3">
+              <button onClick={() => navigate("/triage")} className="flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm hover:bg-slate-50 transition-colors">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-rose-50">
+                  <Heart className="size-4 text-rose-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-slate-900">{clinicalCounts.triageWaiting}</p>
+                  <p className="text-[11px] text-slate-500">Triage waiting</p>
+                </div>
               </button>
-              <ActivityFeedCard
-                activities={
-                  showLoginActivity
-                    ? data.recentActivity
-                    : data.recentActivity.filter((a) => a.action !== "login" && a.action !== "logout")
-                }
-              />
-            </SectionCard>
+              <button onClick={() => navigate("/investigations")} className="flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm hover:bg-slate-50 transition-colors">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-amber-50">
+                  <Beaker className="size-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-slate-900">{clinicalCounts.pendingLabs}</p>
+                  <p className="text-[11px] text-slate-500">Pending labs</p>
+                </div>
+              </button>
+              <button onClick={() => navigate("/patients/new")} className="flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm hover:bg-slate-50 transition-colors">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-blue-50">
+                  <Users className="size-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-slate-900">{data?.stats?.total_patients ?? 0}</p>
+                  <p className="text-[11px] text-slate-500">Total patients</p>
+                </div>
+              </button>
+            </div>
           )}
         </div>
 
-        <div className="space-y-5">
+        {/* ── Right sidebar ── */}
+        <div className="space-y-3">
+
+          {/* Alerts */}
           {hasAlerts && (
-            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle className="size-4 text-amber-600"/>
-                <h3 className="text-sm font-semibold text-amber-800">Needs attention</h3>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <AlertTriangle className="size-3.5 text-amber-600" />
+                <h3 className="text-xs font-semibold text-amber-800">Needs attention</h3>
               </div>
-              {data.tasks?.length > 0 && <TaskCard tasks={data.tasks}/>}
-              {canViewInventory && data.lowStockAlerts?.length > 0 && <AlertCard alerts={data.lowStockAlerts}/>}
+              <div className="space-y-1.5">
+                {data.tasks?.length > 0 && data.tasks.map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 rounded-lg bg-white/70 px-2.5 py-1.5 text-xs">
+                    {t.type === "pending_invitations" ? <Users className="size-3 text-amber-500" /> : <Package className="size-3 text-amber-500" />}
+                    <span className="text-slate-700">{t.label}</span>
+                  </div>
+                ))}
+                {canViewInventory && data.lowStockAlerts?.length > 0 && (
+                  <AlertCard alerts={data.lowStockAlerts} />
+                )}
+              </div>
             </div>
           )}
 
-          {data && data.notifications?.length > 0 && (
-            <SectionCard title="Notifications" actions={data.notifications.some(n => !n.is_read) && <button onClick={handleMarkAllRead} className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Mark all read</button>}>
-              <NotificationsPanel notifications={data.notifications} onMarkRead={handleMarkRead} onMarkAllRead={handleMarkAllRead}/>
+          {/* Notifications compact */}
+          {hasNotifications && (
+            <SectionCard title={
+              <div className="flex items-center gap-1.5">
+                <Bell className="size-3.5 text-slate-500" />
+                <span className="text-xs font-semibold">Notifications</span>
+                {data.notifications.some(n => !n.is_read) && (
+                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-700">
+                    {data.notifications.filter(n => !n.is_read).length}
+                  </span>
+                )}
+              </div>
+            } actions={data.notifications.some(n => !n.is_read) && <button onClick={handleMarkAllRead} className="text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-colors">Mark all read</button>}>
+              <div className="max-h-[180px] overflow-y-auto">
+                <NotificationsPanel notifications={data.notifications} onMarkRead={handleMarkRead} onMarkAllRead={handleMarkAllRead} />
+              </div>
             </SectionCard>
           )}
 
-          <SubscriptionStatusWidget
-            subscription={subscriptionData.subscription}
-            plan={subscriptionData.plan}
-            loading={subscriptionData.loading}
-          />
-          <ActivationChecklist clinicId={clinicId} />
-          <SectionCard title="Clinic">
-            <ClinicOverviewCard clinic={data?.clinic || null}/>
-          </SectionCard>
+          {/* Subscription + Clinic + Activation in one row of small cards */}
+          <div className="space-y-2">
+            <SubscriptionStatusWidget
+              subscription={subscriptionData.subscription}
+              plan={subscriptionData.plan}
+              loading={subscriptionData.loading}
+            />
+            <SectionCard title="Clinic">
+              <ClinicOverviewCard clinic={data?.clinic || null} />
+            </SectionCard>
+            <ActivationChecklist clinicId={clinicId} />
+          </div>
         </div>
       </div>
 
-      {/* Empty state */}
-      {data && data.stats.today_appointments === 0 && data.stats.total_patients === 0 && data.stats.total_inventory_items === 0 && data.tasks?.length === 0 && (
-        <div className="rounded-xl border-2 border-dashed border-muted-foreground/20 p-10 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/5">
-            <CalendarDays className="size-6 text-primary"/>
+      {/* ── Empty state ── */}
+      {isEmpty && (
+        <div className="rounded-xl border-2 border-dashed border-slate-200 p-8 text-center">
+          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-teal-50">
+            <CalendarDays className="size-6 text-teal-600" />
           </div>
-          <h3 className="text-lg font-semibold">Welcome to ClinicOS</h3>
-          <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+          <h3 className="text-base font-semibold text-slate-900">Welcome to ClinicOS</h3>
+          <p className="mt-1 text-xs text-slate-500 max-w-xs mx-auto">
             Your clinic isn't set up yet. Add your first patient or appointment to get started.
           </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
             {canViewPatients && (
-              <button onClick={() => navigate("/patients/new")} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              <button onClick={() => navigate("/patients/new")} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
                 Add a Patient
               </button>
             )}
             {canViewAppointments && (
-              <button onClick={() => navigate("/appointments/new")} className="rounded-lg border bg-card px-4 py-2 text-sm font-medium hover:bg-muted/50 transition-colors">
+              <button onClick={() => navigate("/appointments/new")} className="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
                 Book Appointment
               </button>
             )}
             {canViewInventory && (
-              <button onClick={() => navigate("/inventory/new")} className="rounded-lg border bg-card px-4 py-2 text-sm font-medium hover:bg-muted/50 transition-colors">
+              <button onClick={() => navigate("/inventory/new")} className="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
                 Add Inventory Item
               </button>
             )}
