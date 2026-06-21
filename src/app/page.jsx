@@ -73,36 +73,36 @@ export default function LandingPage() {
       <Nav />
 
       {/* --- HERO with missed revenue trigger --- */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 pt-24 pb-20 sm:pt-32 sm:pb-28">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(13,148,136,0.15)_0%,transparent_60%)]" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-white to-blue-50 pt-24 pb-20 sm:pt-32 sm:pb-28">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(13,148,136,0.06)_0%,transparent_60%)]" />
         <div className="relative mx-auto max-w-6xl px-4 text-center sm:px-6">
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70">
+          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-4 py-1.5 text-xs font-medium text-teal-700">
             <Smartphone className="size-3.5" /> No credit card. 14-day free trial.
           </div>
 
           {/* Missed revenue trigger — visible immediately */}
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-300">
+          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800">
             <TrendingDown className="size-4" />
             Your clinic could be losing {fmt(revenue.monthlyLoss)}/month from missed appointments
           </div>
 
-          <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
+          <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl lg:text-6xl">
             Stop Losing Patients to<br />
-            <span className="text-teal-400">Missed Appointments</span>
+            <span className="text-teal-600">Missed Appointments</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/60">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
             ClinicOS helps clinics manage appointments, patients, staff, inventory, and WhatsApp reminders — all from one dashboard.
           </p>
 
           {/* Two entry points */}
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <DemoButton />
-            <Link to="/signup" className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-medium text-slate-900 shadow-lg hover:bg-slate-100 transition-all">
+            <Link to="/signup" className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-teal-500 transition-all">
               <Sparkles className="size-4" /> Start Free Trial
             </Link>
           </div>
 
-          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-white/40">
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-400">
             <span className="flex items-center gap-1"><Shield className="size-3" /> No credit card</span>
             <span className="flex items-center gap-1"><Check className="size-3" /> 14-day trial</span>
             <span className="flex items-center gap-1"><Zap className="size-3" /> See it in 2 minutes</span>
@@ -162,13 +162,13 @@ export default function LandingPage() {
       </section>
 
       {/* --- CTA with demo button --- */}
-      <section className="bg-gradient-to-br from-slate-900 to-teal-900 py-16 sm:py-20">
+      <section className="bg-gradient-to-br from-teal-50 to-white py-16 sm:py-20">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">See your clinic in action</h2>
-          <p className="mt-3 text-sm text-white/60">Try the demo with pre-loaded data. No signup required.</p>
+          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">See your clinic in action</h2>
+          <p className="mt-3 text-sm text-slate-600">Try the demo with pre-loaded data. No signup required.</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <DemoButton />
-            <Link to="/signup" className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-6 py-3 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all">
+            <Link to="/signup" className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-3 text-sm font-medium text-white shadow-lg hover:bg-teal-500 transition-all">
               Start Free Trial <ArrowRight className="size-4" />
             </Link>
           </div>
@@ -228,7 +228,7 @@ function DemoButton() {
     <button
       onClick={handleDemo}
       disabled={loading}
-      className="inline-flex items-center gap-2 rounded-lg border border-teal-400/30 bg-teal-500/10 px-6 py-3 text-sm font-medium text-teal-300 hover:bg-teal-500/20 hover:text-teal-200 transition-all disabled:opacity-50"
+      className="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-white px-6 py-3 text-sm font-medium text-teal-700 shadow-sm hover:bg-teal-50 hover:border-teal-300 transition-all disabled:opacity-50"
     >
       {loading ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
       {loading ? "Creating..." : "Try with Demo Clinic"}
