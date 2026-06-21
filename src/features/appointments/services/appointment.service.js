@@ -439,7 +439,7 @@ export function getAppointmentService() {
         .from("roles")
         .select("id")
         .eq("name", "Doctor")
-        .single();
+        .maybeSingle();
       if (!roleData) return [];
       const { data } = await supabase
         .from("user_roles")

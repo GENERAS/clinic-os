@@ -197,7 +197,7 @@ export function getStaffService() {
                 .from("user_roles")
                 .select("id, role_id")
                 .eq("user_id", staffId)
-                .single();
+                .maybeSingle();
             if (existing) {
                 const { error } = await supabase
                     .from("user_roles")

@@ -48,7 +48,7 @@ export class PharmacyService {
             `)
             .eq("consultations.clinic_id", clinicId)
             .eq("id", prescriptionId)
-            .single();
+            .maybeSingle();
         if (error) throw error;
         return data;
     }

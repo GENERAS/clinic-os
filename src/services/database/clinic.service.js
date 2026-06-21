@@ -7,7 +7,7 @@ export function getClinicService() {
                 .from("clinics")
                 .select("*")
                 .eq("id", id)
-                .single();
+                .maybeSingle();
             if (error)
                 throw error;
             return data;
@@ -17,7 +17,7 @@ export function getClinicService() {
                 .from("clinics")
                 .select("*")
                 .eq("slug", slug)
-                .single();
+                .maybeSingle();
             if (error)
                 throw error;
             return data;

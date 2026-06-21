@@ -16,7 +16,7 @@ export function getRoleService() {
                 .from("roles")
                 .select("*")
                 .eq("id", id)
-                .single();
+                .maybeSingle();
             if (error)
                 throw error;
             return data;
@@ -26,7 +26,7 @@ export function getRoleService() {
                 .from("roles")
                 .select("*")
                 .eq("name", name)
-                .single();
+                .maybeSingle();
             if (error)
                 throw error;
             return data;

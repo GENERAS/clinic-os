@@ -159,6 +159,9 @@ function ClinicSnapshotStep({ onNext, loading, setLoading }) {
         }
       }
 
+      await supabase.from("clinic_preferences").insert({ clinic_id: clinicId, default_appointment_duration: 30, default_appointment_buffer: 5 }).onConflict("clinic_id").doNothing();
+      await supabase.from("clinic_notification_settings").insert({ clinic_id: clinicId }).onConflict("clinic_id").doNothing();
+
       onNext({ id: clinicId });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create clinic");

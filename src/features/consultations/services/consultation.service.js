@@ -101,7 +101,7 @@ export class ConsultationService {
             `)
             .eq("clinic_id", clinicId)
             .eq("id", id)
-            .single();
+            .maybeSingle();
 
         if (error) throw error;
         return data;

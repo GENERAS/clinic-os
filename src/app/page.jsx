@@ -29,7 +29,7 @@ function Nav() {
         </button>
         <div className="hidden items-center gap-6 sm:flex">
           <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Login</Link>
-          <Link to="/demo" className="text-sm font-medium text-teal-600 hover:text-teal-500 transition-colors">Try Demo</Link>
+          <Link to="/signup" className="text-sm font-medium text-teal-600 hover:text-teal-500 transition-colors">Try Demo</Link>
           <Link to="/signup" className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 transition-colors">Start Free Trial</Link>
         </div>
       </div>
@@ -37,7 +37,7 @@ function Nav() {
         <div className="border-t border-slate-200 bg-white px-4 py-4 sm:hidden">
           <div className="flex flex-col gap-3">
             <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900" onClick={() => setOpen(false)}>Login</Link>
-            <Link to="/demo" className="text-sm font-medium text-teal-600 hover:text-teal-500" onClick={() => setOpen(false)}>Try Demo</Link>
+            <Link to="/signup" className="text-sm font-medium text-teal-600 hover:text-teal-500" onClick={() => setOpen(false)}>Try Demo</Link>
             <Link to="/signup" className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white text-center hover:bg-teal-500 transition-colors" onClick={() => setOpen(false)}>Start Free Trial</Link>
           </div>
         </div>

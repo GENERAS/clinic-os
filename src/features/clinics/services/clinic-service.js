@@ -10,7 +10,7 @@ export function getClinicService() {
                 .from("clinics")
                 .select("*")
                 .eq("id", clinicId)
-                .single();
+                .maybeSingle();
             if (error)
                 throw error;
             return data;
@@ -20,7 +20,7 @@ export function getClinicService() {
                 .from("clinics")
                 .select("*")
                 .eq("id", clinicId)
-                .single();
+                .maybeSingle();
             const { data, error } = await supabase
                 .from("clinics")
                 .update({ ...values, updated_at: new Date().toISOString() })
@@ -68,7 +68,7 @@ export function getClinicService() {
                 .from("clinics")
                 .select("logo_url")
                 .eq("id", clinicId)
-                .single();
+                .maybeSingle();
             if (clinic?.logo_url) {
                 const path = extractPathFromUrl(clinic.logo_url);
                 if (path) {
@@ -139,7 +139,7 @@ export function getClinicService() {
                 .from("clinic_preferences")
                 .select("*")
                 .eq("clinic_id", clinicId)
-                .single();
+                .maybeSingle();
             const { data, error } = await supabase
                 .from("clinic_preferences")
                 .upsert({
@@ -177,7 +177,7 @@ export function getClinicService() {
                 .from("clinic_notification_settings")
                 .select("*")
                 .eq("clinic_id", clinicId)
-                .single();
+                .maybeSingle();
             const { data, error } = await supabase
                 .from("clinic_notification_settings")
                 .upsert({

@@ -215,7 +215,7 @@ export class BillingService {
             .select("insurance_provider, insurance_policy_number, insurance_coverage, insurance_member_name, insurance_relationship, insurance_valid_from, insurance_valid_until")
             .eq("clinic_id", clinicId)
             .eq("id", patientId)
-            .single();
+            .maybeSingle();
         if (error) throw error;
         return data;
     }

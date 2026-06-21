@@ -70,7 +70,7 @@ export class TriageService {
             .select("*")
             .eq("clinic_id", clinicId)
             .eq("id", triageId)
-            .single();
+            .maybeSingle();
         if (error) throw error;
         return data;
     }
