@@ -130,13 +130,12 @@ export default function TriageQueuePage() {
                                 )}
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                {record.status === "waiting" && (
-                                    <button onClick={() => handleMoveToConsultation(record.id)} className="inline-flex items-center gap-1 rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary transition-colors">
-                                        <Stethoscope className="size-3" /> Start
-                                    </button>
-                                )}
-                                <Link to={`/consultations/new?patientId=${record.patient_id}`} className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
-                                    Consult <ChevronRight className="size-3" />
+                                <Link
+                                    to={`/consultations/new?patientId=${record.patient_id}`}
+                                    onClick={() => { if (record.status === "waiting") handleMoveToConsultation(record.id); }}
+                                    className="inline-flex items-center gap-1 rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary transition-colors"
+                                >
+                                    <Stethoscope className="size-3" /> Start Consultation
                                 </Link>
                             </div>
                         </div>

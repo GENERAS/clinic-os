@@ -1,11 +1,12 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, FlaskConical } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getConsultationService } from "@/features/consultations/services/consultation.service";
 import { ConsultationView } from "@/features/consultations/components/ConsultationView";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 export default function ConsultationDetailPage() {
@@ -16,6 +17,7 @@ export default function ConsultationDetailPage() {
     const service = useMemo(() => getConsultationService(), []);
     const [consultation, setConsultation] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [pendingLabs, setPendingLabs] = useState(0);
 
     const load = useCallback(async () => {
         if (!clinicId || !id) return;
@@ -31,6 +33,27 @@ export default function ConsultationDetailPage() {
     }, [clinicId, id, service]);
 
     useEffect(() => { load(); }, [load]);
+
+    useEffect(() => {
+        if (!id) return;
+        const supabase = createClient();
+        const sub = supabase.channel(`consultation-investigations-${id}`)
+            .on("postgres_changes", {
+                event: "*",
+                schema: "public",
+                table: "investigations",
+                filter: `consultation_id=eq.${id}`,
+            }, () => { load(); })
+            .subscribe();
+
+        return () => { supabase.removeChannel(sub); };
+    }, [id, load]);
+
+    useEffect(() => {
+        if (!consultation?.investigations) { setPendingLabs(0); return; }
+        const pending = consultation.investigations.filter(i => i.status === "ordered" || i.status === "sample_collected").length;
+        setPendingLabs(pending);
+    }, [consultation?.investigations]);
 
     if (loading) {
         return <div className="flex justify-center py-12"><Loader2 className="size-8 animate-spin text-muted-foreground"/></div>;
@@ -53,6 +76,11 @@ export default function ConsultationDetailPage() {
         <div className="mx-auto max-w-4xl space-y-6">
             <PageHeader title="Consultation">
                 <div className="flex items-center gap-2">
+                    {pendingLabs > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                            <FlaskConical className="size-3" /> {pendingLabs} pending lab{pendingLabs > 1 ? "s" : ""}
+                        </span>
+                    )}
                     <button
                         onClick={() => navigate(`/patients/${consultation.patient_id}/visits`)}
                         className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"

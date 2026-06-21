@@ -62,6 +62,7 @@ export class InvestigationService {
         const { count, error } = await this.supabase
             .from("investigations")
             .select("*", { count: "exact", head: true })
+            .eq("clinic_id", clinicId)
             .in("status", ["ordered", "sample_collected"]);
 
         if (error) throw error;
@@ -72,11 +73,11 @@ export class InvestigationService {
         const { data, error } = await this.supabase
             .from("investigations")
             .select("category")
-            .eq("consultations.clinic_id", clinicId)
+            .eq("clinic_id", clinicId)
             .not("category", "is", null);
 
         if (error) throw error;
-        const cats = [...new Set((data || []).map(i => i.category))];
+        const cats = [...new Set((data || []).map(i => i.category).filter(Boolean))];
         return cats.sort();
     }
 }

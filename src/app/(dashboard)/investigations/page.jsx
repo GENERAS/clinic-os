@@ -1,7 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Loader2, Search, Filter, Beaker, CheckCircle2, Clock, AlertCircle, FlaskRoundIcon as Flask } from "lucide-react";
+import { Loader2, Search, Filter, Beaker, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getInvestigationService } from "@/features/investigations/services/investigation.service";
@@ -153,11 +152,7 @@ export default function InvestigationsPage() {
 
     return (
         <div className="space-y-5">
-            <PageHeader title="Lab Results Portal" description={`${pendingCount} pending results`}>
-                <Link to="/triage" className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
-                    <Flask className="size-3.5" /> Triage
-                </Link>
-            </PageHeader>
+            <PageHeader title="Lab Results Portal" description={`${pendingCount} pending results`} />
 
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative flex-1 max-w-xs">
