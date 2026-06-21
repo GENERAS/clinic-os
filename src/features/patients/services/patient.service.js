@@ -41,8 +41,15 @@ export function getPatientService() {
                 clinic_id: clinicId,
                 full_name: values.full_name,
                 phone: values.phone,
-                created_by: userId,
+                email: values.email || null,
+                gender: values.gender || null,
                 date_of_birth: values.date_of_birth || null,
+                address: values.address || null,
+                national_id: values.national_id || null,
+                emergency_contact_name: values.emergency_contact_name || null,
+                emergency_contact_phone: values.emergency_contact_phone || null,
+                notes: values.notes || null,
+                created_by: userId,
             })
                 .select("id")
                 .single();
