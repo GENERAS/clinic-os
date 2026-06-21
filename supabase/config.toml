@@ -1,11 +1,4 @@
 # ClinicOS Supabase Configuration
-# Deploy edge functions: supabase functions deploy send-whatsapp
-#                      supabase functions deploy whatsapp-webhook
-#                      supabase functions deploy check-whatsapp-health
-#                      supabase functions deploy process-reminders
-
-[functions]
-enabled = true
 
 [functions.send-whatsapp]
 verify_jwt = false
@@ -20,5 +13,9 @@ verify_jwt = false
 import_map = "./import_map.json"
 
 [functions.process-reminders]
+verify_jwt = false
+import_map = "./import_map.json"
+
+[functions.billing-cron]
 verify_jwt = false
 import_map = "./import_map.json"
