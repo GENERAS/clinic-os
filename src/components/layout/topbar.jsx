@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/utils/cn";
 import { Bell, Menu } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getNotificationService } from "@/features/notifications/services/notification.service";
 export function Topbar({ onMenuClick, className }) {
+    const navigate = useNavigate();
     const { user, clinic: authClinic } = useAuth();
     const clinicId = authClinic?.id;
     const [unreadCount, setUnreadCount] = useState(0);
@@ -24,7 +26,7 @@ export function Topbar({ onMenuClick, className }) {
             </div>
 
             <div className="flex items-center gap-2">
-                <button className="text-muted-foreground hover:text-foreground relative rounded-md p-1.5 transition-colors">
+                <button onClick={() => navigate("/notifications")} className="text-muted-foreground hover:text-foreground relative rounded-md p-1.5 transition-colors">
                     <Bell className="size-[18px]" />
                     {unreadCount > 0 && (
                         <span className="bg-destructive text-destructive-foreground absolute -right-0.5 -top-0.5 flex size-3.5 items-center justify-center rounded-full text-[9px] font-medium">

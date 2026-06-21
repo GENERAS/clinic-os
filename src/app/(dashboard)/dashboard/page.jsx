@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, clinic: authClinic, permissions } = useAuth();
   const clinicId = authClinic?.id;
+  const [showLoginActivity, setShowLoginActivity] = useState(false);
 
   if (authClinic?.id && authClinic?.onboarding_completed === false) {
     return <Navigate to="/onboarding" replace />;
@@ -206,7 +207,20 @@ export default function DashboardPage() {
 
           {data && data.recentActivity?.length > 0 && (
             <SectionCard title="Activity">
-              <ActivityFeedCard activities={data.recentActivity}/>
+              <button
+                type="button"
+                onClick={() => setShowLoginActivity(!showLoginActivity)}
+                className="mb-3 w-full rounded-lg border px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                {showLoginActivity ? "Hide" : "Show"} login activity
+              </button>
+              <ActivityFeedCard
+                activities={
+                  showLoginActivity
+                    ? data.recentActivity
+                    : data.recentActivity.filter((a) => a.action !== "login" && a.action !== "logout")
+                }
+              />
             </SectionCard>
           )}
         </div>

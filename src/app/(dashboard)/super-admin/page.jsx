@@ -27,6 +27,7 @@ export default function SuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [subscriptions, setSubscriptions] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [showLoginActivity, setShowLoginActivity] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -142,7 +143,10 @@ export default function SuperAdminDashboard() {
     { severity: "low", clinic: "Broadcast", problem: "Send announcement to all clinics", actions: [], link: { onClick: () => navigateTo("/admin/notifications") } },
   ];
 
-  const activityItems = recentActivity.slice(0, 12).map(log => {
+  const activityItems = recentActivity
+    .filter(log => showLoginActivity || (log.action !== "login" && log.action !== "logout"))
+    .slice(0, 12)
+    .map(log => {
     const actionMap = { created: "success", deleted: "error", suspended: "error", login: "info", logout: "neutral", updated: "warning", renewed: "success", payment_failed: "error" };
     return {
       type: actionMap[log.action] || "neutral",
@@ -345,6 +349,13 @@ export default function SuperAdminDashboard() {
         {/* RIGHT COLUMN */}
         <div className="space-y-6">
           <ActionQueue items={actionsItems} emptyMessage="All clear" />
+          <button
+            type="button"
+            onClick={() => setShowLoginActivity(!showLoginActivity)}
+            className="w-full rounded-lg border px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            {showLoginActivity ? "Hide" : "Show"} login activity
+          </button>
           <ActivityFeed items={activityItems} emptyMessage="No recent activity." />
         </div>
       </div>
