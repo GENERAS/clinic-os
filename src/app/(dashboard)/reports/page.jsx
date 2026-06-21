@@ -30,6 +30,26 @@ const REPORT_TABS = [
 
 const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
+function MetricCard({ label, value, prefix, suffix, trend, icon: Icon, color }) {
+    return (
+        <div className="rounded-xl border bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+                    <p className="text-2xl font-bold tracking-tight">{prefix}{typeof value === "number" ? value.toLocaleString() : value}{suffix}</p>
+                </div>
+                {Icon && <div className={`rounded-lg p-2 ${color || "bg-primary/10"}`}><Icon className={`size-4 ${color ? "text-white" : "text-primary"}`} /></div>}
+            </div>
+            {trend !== undefined && (
+                <div className={`mt-2 flex items-center gap-1 text-[11px] font-medium ${trend >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    {trend >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+                    {Math.abs(trend).toFixed(1)}% vs last period
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function ReportsPage() {
     const { clinic: authClinic } = useAuth();
     const clinicId = authClinic?.id;
@@ -61,26 +81,6 @@ export default function ReportsPage() {
     useEffect(() => { load(); }, [load]);
 
     const activePeriod = PERIODS.find(p => p.value === period);
-
-    function MetricCard({ label, value, prefix, suffix, trend, icon: Icon, color }) {
-        return (
-            <div className="rounded-xl border bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
-                        <p className="text-2xl font-bold tracking-tight">{prefix}{typeof value === "number" ? value.toLocaleString() : value}{suffix}</p>
-                    </div>
-                    {Icon && <div className={`rounded-lg p-2 ${color || "bg-primary/10"}`}><Icon className={`size-4 ${color ? "text-white" : "text-primary"}`} /></div>}
-                </div>
-                {trend !== undefined && (
-                    <div className={`mt-2 flex items-center gap-1 text-[11px] font-medium ${trend >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                        {trend >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-                        {Math.abs(trend).toFixed(1)}% vs last period
-                    </div>
-                )}
-            </div>
-        );
-    }
 
     function renderContent() {
         if (loading) return <div className="flex justify-center py-16"><Loader2 className="size-8 animate-spin text-muted-foreground"/></div>;
