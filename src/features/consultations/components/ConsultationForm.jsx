@@ -363,16 +363,32 @@ function InvestigationSection({ investigations, onChange }) {
     );
 }
 
+// Maps old vital sign keys (used before normalization) to new standardized keys
+const VITAL_LEGACY_MAP = { bp_systolic: "systolic_bp", bp_diastolic: "diastolic_bp", pulse: "heart_rate", spo2: "oxygen_saturation" };
+
+function normalizeVitals(v) {
+    if (!v || typeof v !== "object") return v || {};
+    const out = { ...v };
+    for (const [oldKey, newKey] of Object.entries(VITAL_LEGACY_MAP)) {
+        if (v[oldKey] !== undefined && v[newKey] === undefined) {
+            out[newKey] = v[oldKey];
+            delete out[oldKey];
+        }
+    }
+    return out;
+}
+
 export function VitalSignsInput({ vitalSigns, onChange, onBlur }) {
+    const safeVitals = normalizeVitals(vitalSigns);
     const fields = [
-        { key: "bp_systolic", label: "BP Systolic", unit: "mmHg", col: "1/2" },
-        { key: "bp_diastolic", label: "BP Diastolic", unit: "mmHg", col: "1/2" },
-        { key: "pulse", label: "Pulse", unit: "bpm", col: "1/3" },
+        { key: "systolic_bp", label: "BP Systolic", unit: "mmHg", col: "1/2" },
+        { key: "diastolic_bp", label: "BP Diastolic", unit: "mmHg", col: "1/2" },
+        { key: "heart_rate", label: "Pulse", unit: "bpm", col: "1/3" },
         { key: "temperature", label: "Temp", unit: "°C", col: "1/3" },
         { key: "weight", label: "Weight", unit: "kg", col: "1/3" },
         { key: "height", label: "Height", unit: "cm", col: "1/3" },
         { key: "respiratory_rate", label: "RR", unit: "/min", col: "1/3" },
-        { key: "spo2", label: "SpO₂", unit: "%", col: "1/3" },
+        { key: "oxygen_saturation", label: "SpO₂", unit: "%", col: "1/3" },
     ];
 
     const weight = parseFloat(vitalSigns?.weight) || 0;
@@ -391,8 +407,8 @@ export function VitalSignsInput({ vitalSigns, onChange, onBlur }) {
                         <input
                             type="number"
                             step="any"
-                            value={vitalSigns?.[f.key] ?? ""}
-                            onChange={(e) => onChange({ ...vitalSigns, [f.key]: e.target.value })}
+                            value={safeVitals?.[f.key] ?? ""}
+                            onChange={(e) => onChange({ ...safeVitals, [f.key]: e.target.value })}
                             onBlur={onBlur}
                             className="w-full rounded-lg border px-2.5 py-1.5 text-sm"
                             min="0"

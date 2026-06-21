@@ -160,7 +160,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-xs text-slate-500">{clinic?.name} &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+          <p className="text-xs text-slate-500">{authClinic?.name} &middot; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
         </div>
         <div className="flex items-center gap-2">
           <RealtimeStatusBadge status={realtimeStatus} />

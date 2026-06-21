@@ -119,10 +119,13 @@ export function PrescriptionPreview({ consultation, clinic }) {
                 {vitals && Object.keys(vitals).length > 0 && (
                     <div className="mb-4 text-xs">
                         <span className="font-bold">Vitals: </span>
-                        {vitals.bp_systolic && vitals.bp_diastolic ? `BP ${vitals.bp_systolic}/${vitals.bp_diastolic} mmHg · ` : ""}
-                        {vitals.pulse ? `Pulse ${vitals.pulse} bpm · ` : ""}
+                        {vitals.systolic_bp && vitals.diastolic_bp
+                            ? `BP ${vitals.systolic_bp}/${vitals.diastolic_bp} mmHg · `
+                            : vitals.bp_systolic && vitals.bp_diastolic
+                            ? `BP ${vitals.bp_systolic}/${vitals.bp_diastolic} mmHg · ` : ""}
+                        {vitals.heart_rate ? `Pulse ${vitals.heart_rate} bpm · ` : vitals.pulse ? `Pulse ${vitals.pulse} bpm · ` : ""}
                         {vitals.temperature ? `Temp ${vitals.temperature}°C · ` : ""}
-                        {vitals.spo2 ? `SpO₂ ${vitals.spo2}%` : ""}
+                        {vitals.oxygen_saturation ? `SpO₂ ${vitals.oxygen_saturation}%` : vitals.spo2 ? `SpO₂ ${vitals.spo2}%` : ""}
                     </div>
                 )}
 
@@ -244,30 +247,45 @@ export function ConsultationView({ consultation, clinic, onBack }) {
                         <div>
                             <span className="font-medium text-muted-foreground">Vital Signs:</span>
                             <div className="grid grid-cols-4 gap-2 mt-1">
-                                {vitals.bp_systolic && vitals.bp_diastolic && (
+                                {(vitals.systolic_bp && vitals.diastolic_bp) ? (
+                                    <div className="rounded bg-white border p-2 text-center">
+                                        <span className="text-[10px] text-muted-foreground block">BP</span>
+                                        <span className="font-semibold">{vitals.systolic_bp}/{vitals.diastolic_bp}</span>
+                                    </div>
+                                ) : (vitals.bp_systolic && vitals.bp_diastolic) ? (
                                     <div className="rounded bg-white border p-2 text-center">
                                         <span className="text-[10px] text-muted-foreground block">BP</span>
                                         <span className="font-semibold">{vitals.bp_systolic}/{vitals.bp_diastolic}</span>
                                     </div>
-                                )}
-                                {vitals.pulse && (
+                                ) : null}
+                                {vitals.heart_rate ? (
+                                    <div className="rounded bg-white border p-2 text-center">
+                                        <span className="text-[10px] text-muted-foreground block">Pulse</span>
+                                        <span className="font-semibold">{vitals.heart_rate} <span className="text-[10px] font-normal">bpm</span></span>
+                                    </div>
+                                ) : vitals.pulse ? (
                                     <div className="rounded bg-white border p-2 text-center">
                                         <span className="text-[10px] text-muted-foreground block">Pulse</span>
                                         <span className="font-semibold">{vitals.pulse} <span className="text-[10px] font-normal">bpm</span></span>
                                     </div>
-                                )}
+                                ) : null}
                                 {vitals.temperature && (
                                     <div className="rounded bg-white border p-2 text-center">
                                         <span className="text-[10px] text-muted-foreground block">Temp</span>
                                         <span className="font-semibold">{vitals.temperature}°C</span>
                                     </div>
                                 )}
-                                {vitals.spo2 && (
+                                {vitals.oxygen_saturation ? (
+                                    <div className="rounded bg-white border p-2 text-center">
+                                        <span className="text-[10px] text-muted-foreground block">SpO₂</span>
+                                        <span className="font-semibold">{vitals.oxygen_saturation}%</span>
+                                    </div>
+                                ) : vitals.spo2 ? (
                                     <div className="rounded bg-white border p-2 text-center">
                                         <span className="text-[10px] text-muted-foreground block">SpO₂</span>
                                         <span className="font-semibold">{vitals.spo2}%</span>
                                     </div>
-                                )}
+                                ) : null}
                                 {vitals.weight && (
                                     <div className="rounded bg-white border p-2 text-center">
                                         <span className="text-[10px] text-muted-foreground block">Weight</span>

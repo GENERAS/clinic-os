@@ -7,7 +7,22 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getConsultationService } from "@/features/consultations/services/consultation.service";
 import { ConsultationForm } from "@/features/consultations/components/ConsultationForm";
 import { getPatientService } from "@/features/patients/services/patient.service";
+import { getTriageService } from "@/features/triage/services/triage.service";
 import { toast } from "sonner";
+
+const LEGACY_VITAL_MAP = { bp_systolic: "systolic_bp", bp_diastolic: "diastolic_bp", pulse: "heart_rate", spo2: "oxygen_saturation" };
+
+function normalizeVitals(v) {
+    if (!v || typeof v !== "object") return v || {};
+    const out = { ...v };
+    for (const [oldKey, newKey] of Object.entries(LEGACY_VITAL_MAP)) {
+        if (v[oldKey] !== undefined && v[newKey] === undefined) {
+            out[newKey] = v[oldKey];
+            delete out[oldKey];
+        }
+    }
+    return out;
+}
 
 export default function NewConsultationPage() {
     const navigate = useNavigate();
@@ -16,27 +31,39 @@ export default function NewConsultationPage() {
     const clinicId = authClinic?.id;
     const patientId = searchParams.get("patientId");
     const appointmentId = searchParams.get("appointmentId");
+    const triageId = searchParams.get("triageId");
 
     const consultService = useMemo(() => getConsultationService(), []);
     const patientService = useMemo(() => getPatientService(), []);
+    const triageService = useMemo(() => getTriageService(), []);
 
     const [patient, setPatient] = useState(null);
+    const [triageData, setTriageData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (!clinicId || !patientId) { setLoading(false); return; }
-        patientService.getPatientById(clinicId, patientId)
-            .then(setPatient)
+        Promise.all([
+            patientService.getPatientById(clinicId, patientId),
+            triageId ? triageService.getTriageById(clinicId, triageId).catch(() => null) : Promise.resolve(null),
+        ])
+            .then(([pt, triage]) => {
+                setPatient(pt);
+                setTriageData(triage);
+            })
             .catch(() => toast.error("Failed to load patient"))
             .finally(() => setLoading(false));
-    }, [clinicId, patientId, patientService]);
+    }, [clinicId, patientId, triageId, patientService, triageService]);
 
     const handleSave = useCallback(async (data, diagnoses, prescriptions, investigations) => {
         if (!clinicId || !user) return;
         setSaving(true);
         try {
             const id = await consultService.createConsultation(clinicId, data, diagnoses, prescriptions, investigations, user.id);
+            if (triageData?.id) {
+                await triageService.updateTriageStatus(clinicId, triageData.id, "completed", id);
+            }
             toast.success("Consultation saved as draft");
             navigate(`/consultations/${id}`);
         } catch (err) {
@@ -44,7 +71,7 @@ export default function NewConsultationPage() {
         } finally {
             setSaving(false);
         }
-    }, [clinicId, user, consultService, navigate]);
+    }, [clinicId, user, consultService, triageData, triageService, navigate]);
 
     const handleComplete = useCallback(async (data, diagnoses, prescriptions, investigations) => {
         if (!clinicId || !user) return;
@@ -55,6 +82,9 @@ export default function NewConsultationPage() {
                 { ...data, status: "completed" },
                 diagnoses, prescriptions, investigations, user.id
             );
+            if (triageData?.id) {
+                await triageService.updateTriageStatus(clinicId, triageData.id, "completed", id);
+            }
             await consultService.supabase
                 .from("appointments")
                 .update({ status: "completed" })
@@ -67,7 +97,7 @@ export default function NewConsultationPage() {
         } finally {
             setSaving(false);
         }
-    }, [clinicId, user, consultService, navigate, appointmentId]);
+    }, [clinicId, user, consultService, triageData, triageService, navigate, appointmentId]);
 
     if (!patientId) {
         return (
@@ -108,7 +138,11 @@ export default function NewConsultationPage() {
             <ConsultationForm
                 patient={patient}
                 doctorName={user?.full_name || "Doctor"}
-                initialData={{ appointment_id: appointmentId }}
+                initialData={{
+                    appointment_id: appointmentId,
+                    chief_complaint: triageData?.chief_complaint || "",
+                    vital_signs: triageData?.vital_signs ? normalizeVitals(triageData.vital_signs) : {},
+                }}
                 onSave={handleSave}
                 onComplete={handleComplete}
                 onCancel={() => navigate(-1)}

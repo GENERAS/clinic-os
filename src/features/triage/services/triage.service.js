@@ -64,6 +64,17 @@ export class TriageService {
         return data || [];
     }
 
+    async getTriageById(clinicId, triageId) {
+        const { data, error } = await this.supabase
+            .from("triage_records")
+            .select("*")
+            .eq("clinic_id", clinicId)
+            .eq("id", triageId)
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
     async getTriageByAppointment(clinicId, appointmentId) {
         const { data, error } = await this.supabase
             .from("triage_records")

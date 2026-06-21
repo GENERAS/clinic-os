@@ -131,7 +131,7 @@ export default function TriageQueuePage() {
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <Link
-                                    to={`/consultations/new?patientId=${record.patient_id}`}
+                                    to={`/consultations/new?patientId=${record.patient_id}&triageId=${record.id}`}
                                     onClick={() => { if (record.status === "waiting") handleMoveToConsultation(record.id); }}
                                     className="inline-flex items-center gap-1 rounded-lg bg-primary/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary transition-colors"
                                 >

@@ -13,24 +13,24 @@ export class InvestigationService {
             .select(`
                 *,
                 consultations!inner(
-                    id, patient_id, chief_complaint,
+                    id, patient_id, chief_complaint, created_at,
                     patients(id, full_name, phone)
                 )
             `)
-            .eq("investigations.clinic_id", clinicId);
+            .eq("clinic_id", clinicId);
 
         if (filters.status) {
-            query = query.eq("investigations.status", filters.status);
+            query = query.eq("status", filters.status);
         }
         if (filters.category) {
-            query = query.eq("investigations.category", filters.category);
+            query = query.eq("category", filters.category);
         }
         if (filters.patientId) {
-            query = query.eq("investigations.patient_id", filters.patientId);
+            query = query.eq("patient_id", filters.patientId);
         }
 
         if (filters.pendingOnly) {
-            query = query.in("investigations.status", ["ordered", "sample_collected"]);
+            query = query.in("status", ["ordered", "sample_collected"]);
         }
 
         const { data, error } = await query
