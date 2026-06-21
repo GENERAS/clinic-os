@@ -85,6 +85,12 @@ export default function PatientDetailPage() {
 
       <PatientProfileHeader patient={patient}/>
 
+      {patient.national_id && (
+        <SectionCard title="National ID">
+          <p className="text-sm font-mono tracking-wider">{patient.national_id.replace(/(\d{4})(?=\d)/g, "$1 ")}</p>
+        </SectionCard>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         {/* Emergency Contact */}
         {patient.emergency_contact_name && (<SectionCard title="Emergency Contact" icon={<User className="size-4"/>}>

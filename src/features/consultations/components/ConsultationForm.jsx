@@ -1,7 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
-import { Plus, Trash2, X, Search, ChevronDown, Stethoscope, PillBottle, FlaskConical } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Trash2, X, Search, ChevronDown, Stethoscope, PillBottle, FlaskConical, AlertTriangle } from "lucide-react";
 import { COMMON_DIAGNOSES, COMMON_MEDICINES, COMMON_INVESTIGATIONS, COMMON_COMPLAINTS, FREQUENCY_OPTIONS, MEDICINE_FORMS, MEDICINE_ROUTES } from "@/features/consultations/services/rwanda-seed-data";
+import { getTriageService } from "@/features/triage/services/triage.service";
+import { createClient } from "@/lib/supabase/client";
 
 function SimpleSelect({ options, value, onChange, placeholder, search }) {
     const [open, setOpen] = useState(false);
@@ -149,7 +151,8 @@ function DiagnosisSection({ diagnoses, onChange }) {
     );
 }
 
-function PrescriptionSection({ prescriptions, onChange }) {
+function PrescriptionSection({ prescriptions, onChange, patientAllergies }) {
+    const [warnings, setWarnings] = useState({});
     const addRx = () => {
         onChange([...prescriptions, { medicine_name: "", strength: "", form: "", dosage: "", frequency: "", duration: "", quantity: "", route: "oral", notes: "" }]);
     };
@@ -158,13 +161,36 @@ function PrescriptionSection({ prescriptions, onChange }) {
         onChange(updated);
     };
     const removeRx = (idx) => {
+        setWarnings(prev => { const n = { ...prev }; delete n[idx]; return n; });
         onChange(prescriptions.filter((_, i) => i !== idx));
+    };
+
+    const allergyKeywords = useMemo(() => {
+        if (!patientAllergies) return [];
+        return patientAllergies.toLowerCase().split(/[,;\/]+/).map(s => s.trim()).filter(Boolean);
+    }, [patientAllergies]);
+
+    const checkAllergyMatch = (medicineName) => {
+        if (!medicineName || allergyKeywords.length === 0) return null;
+        const name = medicineName.toLowerCase();
+        for (const kw of allergyKeywords) {
+            if (name.includes(kw) || kw.includes(name)) return kw;
+        }
+        return null;
     };
 
     const handleMedicineSelect = (idx, val, opt) => {
         updateRx(idx, "medicine_name", val);
         if (opt?.strength) updateRx(idx, "strength", opt.strength);
         if (opt?.form) updateRx(idx, "form", opt.form);
+        const match = checkAllergyMatch(val);
+        setWarnings(prev => ({ ...prev, [idx]: match }));
+    };
+
+    const handleMedicineInput = (idx, val) => {
+        updateRx(idx, "medicine_name", val);
+        const match = checkAllergyMatch(val);
+        setWarnings(prev => ({ ...prev, [idx]: match }));
     };
 
     const freqLabels = {};
@@ -200,6 +226,12 @@ function PrescriptionSection({ prescriptions, onChange }) {
                             <Trash2 className="size-3.5 mt-2" />
                         </button>
                     </div>
+                    {warnings[i] && (
+                        <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                            <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
+                            <span>Allergy alert: Patient has documented allergy to <strong>{warnings[i]}</strong>. Verify before prescribing.</span>
+                        </div>
+                    )}
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                         <input
                             value={rx.strength}
@@ -432,6 +464,7 @@ export function ComplaintQuickSelect({ value, onChange }) {
 }
 
 export function ConsultationForm({ patient, doctorName, initialData, onSave, onComplete, onCancel, saving }) {
+    const [patientAllergies, setPatientAllergies] = useState(null);
     const [chiefComplaint, setChiefComplaint] = useState(initialData?.chief_complaint || "");
     const [hpi, setHpi] = useState(initialData?.history_of_presenting_illness || "");
     const [vitalSigns, setVitalSigns] = useState(initialData?.vital_signs || {});
@@ -454,6 +487,21 @@ export function ConsultationForm({ patient, doctorName, initialData, onSave, onC
     const [selectedComplaints, setSelectedComplaints] = useState(
         chiefComplaint ? chiefComplaint.split(";").map(s => s.trim()).filter(Boolean) : []
     );
+
+    useEffect(() => {
+        if (!patient?.id) return;
+        const supabase = createClient();
+        supabase.from("triage_records")
+            .select("allergies")
+            .eq("patient_id", patient.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then(({ data }) => {
+                if (data?.allergies) setPatientAllergies(data.allergies);
+            })
+            .catch(() => {});
+    }, [patient?.id]);
 
     const handleChiefComplaintChange = (list) => {
         setSelectedComplaints(list);
@@ -545,7 +593,7 @@ export function ConsultationForm({ patient, doctorName, initialData, onSave, onC
             </section>
 
             <section className="space-y-3">
-                <PrescriptionSection prescriptions={prescriptions} onChange={setPrescriptions} />
+                <PrescriptionSection prescriptions={prescriptions} onChange={setPrescriptions} patientAllergies={patientAllergies} />
             </section>
 
             <section className="space-y-3">

@@ -1,5 +1,6 @@
 ﻿import { createClient } from "@/lib/supabase/client";
 import { getAuditService } from "@/services/database/audit.service";
+import { getSmsService } from "@/features/whatsapp/services/sms.service";
 import { fetchUsers, enrichUser } from "@/lib/supabase/users";
 
 const TEMPLATE_VARIABLES = {
@@ -29,6 +30,20 @@ export function getWhatsAppService() {
     const supabase = createClient();
     const audit = getAuditService();
     const efBase = getEdgeFunctionBase();
+
+    const sms = getSmsService();
+
+    async function trySmsFallback(clinicId, values, originalMessage) {
+      try {
+        const smsResult = await sms.send(clinicId, values.phone_number,
+          `[SMS Fallback] ${values.message_content || "Appointment notification"}`,
+          { patient_id: values.patient_id, appointment_id: values.appointment_id }
+        );
+        return { ...originalMessage, sms_fallback: smsResult.id };
+      } catch {
+        return originalMessage;
+      }
+    }
 
     return {
         getTemplateVariables: () => TEMPLATE_VARIABLES,
@@ -119,13 +134,20 @@ export function getWhatsAppService() {
             return { connected: false, last_successful_message: null, last_health_check_at: null, health_check_passed: null };
         },
 
-        // --- Send Message (calls Meta via edge function, falls back to simulation) ---
+        // --- Send Message (calls Meta via edge function, with SMS fallback) ---
         async sendMessage(clinicId, values) {
             const { data: message, error } = await supabase
                 .from("whatsapp_messages")
                 .insert({ ...values, clinic_id: clinicId, provider: "meta", status: "queued" })
                 .select().single();
             if (error) throw error;
+
+            const markFailed = async (errMsg) => {
+                const now = new Date().toISOString();
+                await supabase.from("whatsapp_messages")
+                    .update({ status: "failed", failed_at: now, error_message: errMsg })
+                    .eq("id", message.id);
+            };
 
             try {
                 if (efBase) {
@@ -134,8 +156,8 @@ export function getWhatsAppService() {
                         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` },
                         body: JSON.stringify({ messageId: message.id, clinicId }),
                     });
-                    const edgeResult = await edgeRes.json();
                     if (edgeRes.ok) {
+                        const edgeResult = await edgeRes.json();
                         audit.log({
                             clinic_id: clinicId, user_id: values.appointment_id || undefined,
                             action: "whatsapp sent", entity_type: "whatsapp_messages",
@@ -144,6 +166,8 @@ export function getWhatsAppService() {
                         }).catch(() => {});
                         return { ...message, ...edgeResult, status: "sent" };
                     }
+                    await markFailed("Meta API returned non-200");
+                    return await trySmsFallback(clinicId, values, { ...message, status: "failed" });
                 }
 
                 const providerMessageId = `wa_${message.id}_${Date.now()}`;
@@ -159,11 +183,8 @@ export function getWhatsAppService() {
                 }).catch(() => {});
                 return { ...message, status: "sent", provider_message_id: providerMessageId, sent_at: now };
             } catch {
-                const now = new Date().toISOString();
-                await supabase.from("whatsapp_messages")
-                    .update({ status: "failed", failed_at: now, error_message: "Send failed" })
-                    .eq("id", message.id);
-                return { ...message, status: "failed", failed_at: now, error_message: "Send failed" };
+                await markFailed("Send failed");
+                return await trySmsFallback(clinicId, values, { ...message, status: "failed", failed_at: new Date().toISOString(), error_message: "Send failed" });
             }
         },
 

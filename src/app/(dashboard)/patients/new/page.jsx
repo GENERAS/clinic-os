@@ -33,6 +33,7 @@ export default function NewPatientPage() {
                 gender: values.gender || null,
                 date_of_birth: values.date_of_birth || null,
                 address: values.address || null,
+                national_id: values.national_id || null,
                 emergency_contact_name: values.emergency_contact_name || null,
                 emergency_contact_phone: values.emergency_contact_phone || null,
                 notes: values.notes || null,
@@ -112,11 +113,19 @@ export default function NewPatientPage() {
             </div>
 
             <div>
-              <label htmlFor="address" className="mb-1.5 block text-sm font-medium">
-                Address
-              </label>
-              <input id="address" type="text" placeholder="Patient address" {...register("address")} disabled={saving} className="w-full rounded-lg border bg-background px-3 py-2 text-sm disabled:opacity-60"/>
-            </div>
+                <label htmlFor="national_id" className="mb-1.5 block text-sm font-medium">
+                  National ID (NID)
+                </label>
+                <input id="national_id" type="text" placeholder="16-digit National ID" maxLength={16} {...register("national_id")} disabled={saving} className="w-full rounded-lg border bg-background px-3 py-2 text-sm disabled:opacity-60"/>
+                {errors.national_id && (<p className="mt-1 text-xs text-destructive">{errors.national_id.message}</p>)}
+              </div>
+
+            <div>
+                <label htmlFor="address" className="mb-1.5 block text-sm font-medium">
+                  Address
+                </label>
+                <input id="address" type="text" placeholder="Patient address" {...register("address")} disabled={saving} className="w-full rounded-lg border bg-background px-3 py-2 text-sm disabled:opacity-60"/>
+              </div>
           </div>
         </SectionCard>
 

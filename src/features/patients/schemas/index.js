@@ -1,4 +1,7 @@
 import { z } from "zod";
+
+const nationalIdRegex = /^\d{16}$/;
+
 export const createPatientSchema = z.object({
     full_name: z.string().min(1, "Name is required").max(200),
     phone: z.string().min(1, "Phone is required"),
@@ -6,6 +9,7 @@ export const createPatientSchema = z.object({
     gender: z.string().optional().nullable(),
     date_of_birth: z.string().optional().nullable(),
     address: z.string().optional().nullable(),
+    national_id: z.string().regex(nationalIdRegex, "National ID must be exactly 16 digits").optional().nullable().or(z.literal("")),
     emergency_contact_name: z.string().optional().nullable(),
     emergency_contact_phone: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
@@ -17,6 +21,7 @@ export const updatePatientSchema = z.object({
     gender: z.string().optional().nullable(),
     date_of_birth: z.string().optional().nullable(),
     address: z.string().optional().nullable(),
+    national_id: z.string().regex(nationalIdRegex, "National ID must be exactly 16 digits").optional().nullable().or(z.literal("")),
     emergency_contact_name: z.string().optional().nullable(),
     emergency_contact_phone: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),

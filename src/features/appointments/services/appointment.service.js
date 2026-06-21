@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { getAuditService } from "@/services/database/audit.service";
+import { getWhatsAppAutomationService } from "@/features/whatsapp/services/whatsapp-automation.service";
 import { APPOINTMENT_STATUS_TRANSITIONS } from "../types";
 import { fetchUsers as fetchUsersBatch, enrichUser } from "@/lib/supabase/users";
 
@@ -31,6 +32,8 @@ export function getAppointmentService() {
       throw new Error(`Cannot transition from "${currentStatus}" to "${newStatus}"`);
     }
   };
+
+  const whatsapp = getWhatsAppAutomationService();
 
   const checkConflict = async (clinicId, doctorId, date, startTime, endTime, excludeAppointmentId) => {
     let query = supabase
@@ -86,6 +89,7 @@ export function getAppointmentService() {
         entity_id: data.id,
         new_value: { patient_name: values.patient_name, doctor_id: values.doctor_id, date: values.appointment_date, start_time: values.start_time, end_time: values.end_time },
       }).catch(() => {});
+      whatsapp.queueAppointmentConfirmation(data.id).catch(() => {});
       return mapAppointment(data);
     },
 
@@ -186,6 +190,17 @@ export function getAppointmentService() {
           title: "Appointment Cancelled",
           message: `${current.patient_name}'s appointment on ${current.appointment_date} at ${String(current.start_time).substring(0, 5)} was cancelled`,
           type: "warning",
+        }).then().catch(() => {});
+        whatsapp.queueAppointmentCancelled(appointmentId).catch(() => {});
+        supabase.from("revenue_recovery").insert({
+          clinic_id: clinicId,
+          appointment_id: appointmentId,
+          patient_id: current.patient_id,
+          lost_revenue: 12000,
+          currency: "RWF",
+          reason: "cancellation",
+          cancelled_at: new Date().toISOString(),
+          recovered: false,
         }).then().catch(() => {});
       }
       audit.log({

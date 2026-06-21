@@ -24,6 +24,17 @@ export function getPatientService() {
             if (existing) {
                 throw new Error(`PATIENT_EXISTS:${existing.id}:${existing.full_name}`);
             }
+            if (values.national_id) {
+                const { data: nidExisting } = await supabase
+                    .from("patients")
+                    .select("id, full_name")
+                    .eq("clinic_id", clinicId)
+                    .eq("national_id", values.national_id)
+                    .maybeSingle();
+                if (nidExisting) {
+                    throw new Error(`PATIENT_EXISTS:${nidExisting.id}:${nidExisting.full_name}`);
+                }
+            }
             const { data: patient, error } = await supabase
                 .from("patients")
                 .insert({

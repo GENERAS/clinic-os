@@ -71,7 +71,7 @@ export function getBillingNotificationService() {
 
         if (new Date() >= graceEnd) {
           await supabase.from("subscriptions").update({
-            status: "expired",
+            status: "suspended",
             updated_at: now,
           }).eq("id", sub.id);
 
@@ -80,19 +80,19 @@ export function getBillingNotificationService() {
           audit.log({
             clinic_id: sub.clinic_id,
             user_id: null,
-            action: "Subscription Expired",
+            action: "Subscription Suspended",
             entity_type: "subscriptions",
             entity_id: sub.id,
           }).catch(() => {});
 
-          results.push({ clinicId: sub.clinic_id, action: "expired" });
-        } else if (sub.status !== "grace_period") {
+          results.push({ clinicId: sub.clinic_id, action: "suspended" });
+        } else if (sub.status !== "past_due") {
           await supabase.from("subscriptions").update({
-            status: "grace_period",
+            status: "past_due",
             updated_at: now,
           }).eq("id", sub.id);
 
-          results.push({ clinicId: sub.clinic_id, action: "grace_period" });
+          results.push({ clinicId: sub.clinic_id, action: "past_due" });
         }
       }
 

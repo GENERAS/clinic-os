@@ -2,6 +2,11 @@ import { createClient } from "@/lib/supabase/client";
 
 let cachedService = null;
 
+export const INSURANCE_SPLITS = {
+  RSSB_RAMA: { patient: 15, insurer: 85, label: "RSSB RAMA (15/85)" },
+  MMI: { patient: 10, insurer: 90, label: "MMI (10/90)" },
+};
+
 export class BillingService {
     constructor(supabase) {
         this.supabase = supabase;
