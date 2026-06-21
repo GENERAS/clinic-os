@@ -31,7 +31,12 @@ export default function SignupPage() {
       toast.success("Account created! Let's set up your clinic.");
       navigate("/onboarding");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create account");
+      const msg = err instanceof Error ? err.message : "Failed to create account";
+      if (msg.includes("rate limit") || msg.includes("429") || msg.includes("Rate limit")) {
+        toast.error("Too many sign-ups. Please wait a few minutes before trying again.");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }

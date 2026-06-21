@@ -19,8 +19,8 @@ function NavItem({ item, onClose }) {
         "group relative flex items-center gap-3 px-3 py-2.5 lg:py-2 text-sm font-medium transition-all rounded-lg",
         "min-h-[44px]",
         isActive
-          ? "bg-slate-800 text-white"
-          : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+          ? "bg-teal-50 text-teal-700"
+          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
       )}
     >
       <item.icon className="size-[18px] shrink-0" />
@@ -33,7 +33,7 @@ function NavItem({ item, onClose }) {
 function NavSection({ label, children }) {
   return (
     <div className="mb-3">
-      <p className="text-slate-500 mb-1 px-3 text-[11px] font-semibold uppercase tracking-widest">
+      <p className="text-slate-400 mb-1 px-3 text-[11px] font-semibold uppercase tracking-widest">
         {label}
       </p>
       {children}
@@ -47,15 +47,15 @@ export function Sidebar({ isOpen, onClose }) {
     {isOpen && (<div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onClose}/>)}
 
     <aside className={cn(
-      "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-slate-900 text-slate-50 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
+      "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white text-slate-900 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
       isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
-      <div className="flex h-14 items-center gap-3 border-b border-slate-800 px-3 lg:px-4 min-w-0">
+      <div className="flex h-14 items-center gap-3 border-b border-slate-200 px-3 lg:px-4 min-w-0">
         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-600">
           <Hospital className="size-4 text-white" />
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="text-sm font-semibold leading-tight text-white truncate">{clinic?.name ?? "ClinicOS"}</span>
+          <span className="text-sm font-semibold leading-tight text-slate-900 truncate">{clinic?.name ?? "ClinicOS"}</span>
           <span className="text-slate-500 text-[10px] leading-tight truncate">{user?.email ?? ""}</span>
         </div>
       </div>
@@ -98,18 +98,18 @@ export function Sidebar({ isOpen, onClose }) {
         </NavSection>
       </nav>
 
-      <div className="border-t border-slate-800 px-2 py-2 space-y-0.5">
+      <div className="border-t border-slate-200 px-2 py-2 space-y-0.5">
         {isSuperAdmin && (
           <Link
             to="/admin"
             onClick={onClose}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors min-h-[44px]"
           >
             <Shield className="size-[18px] shrink-0" />
             <span className="truncate">Admin Portal</span>
           </Link>
         )}
-        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]">
+        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors min-h-[44px]">
           <LogOut className="size-[18px] shrink-0" />
           <span className="truncate">Sign out</span>
         </button>

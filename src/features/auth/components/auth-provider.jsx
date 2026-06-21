@@ -65,12 +65,12 @@ async function loadUserData(supabaseUserId) {
             avatarUrl: userData.avatar_url,
             clinicId: userData.clinic_id,
         },
-        clinic: {
-            id: clinicData.id ?? userData.clinic_id,
+        clinic: clinicData ? {
+            id: clinicData.id,
             name: clinicData.name ?? "",
             slug: clinicData.slug ?? "",
-            onboarding_completed: clinicData?.onboarding_completed ?? true,
-        },
+            onboarding_completed: clinicData.onboarding_completed ?? false,
+        } : null,
         roles,
         permissions,
         clinicId: userData.clinic_id,

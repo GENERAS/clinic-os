@@ -30,6 +30,11 @@ export function getDemoService() {
 
       await supabase.from("clinics").update({ metadata: { is_demo: true, created_by: userId }, onboarding_completed: true }).eq("id", clinicId);
 
+      const { data: ownerRole } = await supabase.from("roles").select("id").eq("name", "Owner").maybeSingle();
+      if (ownerRole) {
+        await supabase.from("user_roles").insert({ user_id: userId, role_id: ownerRole.id, clinic_id: clinicId });
+      }
+
       const patientIds = [];
       for (const p of DEMO_PATIENTS) {
         const { data: newId, error } = await supabase.rpc("create_patient", {

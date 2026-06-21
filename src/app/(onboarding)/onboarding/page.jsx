@@ -417,7 +417,7 @@ function MissionTwoAppointment({ clinicId, onNext }) {
           <select value={form.patientId} onChange={(e) => setForm((p) => ({ ...p, patientId: e.target.value }))}
             className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors">
             <option value="">Select patient...</option>
-            {patients.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {patients.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
           </select>
         </div>
         <div>

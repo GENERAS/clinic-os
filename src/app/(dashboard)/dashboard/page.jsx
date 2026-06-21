@@ -72,7 +72,7 @@ export default function DashboardPage() {
       const supabase = createClient();
       const [{ count: consultations }, { count: pendingLabs }, { count: triageWaiting }] = await Promise.all([
         supabase.from("consultations").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId).gte("created_at", today),
-        supabase.from("investigations").select("*", { count: "exact", head: true }).in("status", ["ordered", "sample_collected"]),
+        supabase.from("investigations").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId).in("status", ["ordered", "sample_collected"]),
         supabase.from("triage_records").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("status", "waiting"),
       ]);
       setClinicalCounts({ consultations: consultations || 0, pendingLabs: pendingLabs || 0, triageWaiting: triageWaiting || 0 });

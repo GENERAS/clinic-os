@@ -195,7 +195,7 @@ function DemoButton() {
         navigate("/dashboard");
         return;
       }
-      const demoEmail = "demo-" + Date.now() + "@clinic-os.demo";
+      const demoEmail = "demo-" + Date.now() + "@example.com";
       const demoPass = "demo123456";
       const { data, error } = await supabase.auth.signUp({
         email: demoEmail,
@@ -204,7 +204,7 @@ function DemoButton() {
       });
       if (error) {
         if (error.message.includes("rate limit") || error.status === 429) {
-          toast.error("Signup rate limited. Please wait a moment or try the Free Trial.");
+          toast.error("Too many sign-ups from this IP. Please wait a few minutes or register manually.");
           setLoading(false);
           return;
         }

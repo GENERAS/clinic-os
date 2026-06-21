@@ -34,8 +34,8 @@ function NavItem({ item, onClose }) {
       className={cn(
         "group relative flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all rounded-lg",
         isActive
-          ? "bg-slate-800 text-white"
-          : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+          ? "bg-teal-50 text-teal-700"
+          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
       )}
     >
       <item.icon className="size-[18px] shrink-0" />
@@ -62,14 +62,14 @@ export function AdminLayout() {
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-slate-900 text-slate-50 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
+        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white text-slate-900 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-800 px-3 lg:px-4 min-w-0">
+        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 px-3 lg:px-4 min-w-0">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-600">
             <Shield className="size-4 text-white" />
           </div>
-          <span className="text-sm font-bold tracking-tight text-white truncate">ClinicOS</span>
+          <span className="text-sm font-bold tracking-tight text-slate-900 truncate">ClinicOS</span>
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-thin">
@@ -78,11 +78,11 @@ export function AdminLayout() {
           ))}
         </nav>
 
-        <div className="border-t border-slate-800 px-2 py-2 space-y-0.5">
+        <div className="border-t border-slate-200 px-2 py-2 space-y-0.5">
           <Link
             to="/admin/profile"
             onClick={() => setSidebarOpen(false)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors min-h-[44px]"
           >
             <User className="size-[18px] shrink-0" />
             <span className="truncate">Profile</span>
@@ -90,14 +90,14 @@ export function AdminLayout() {
           <Link
             to="/dashboard"
             onClick={() => setSidebarOpen(false)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors min-h-[44px]"
           >
             <ArrowLeft className="size-[18px] shrink-0" />
             <span className="truncate">Back to Clinic</span>
           </Link>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors min-h-[44px]"
           >
             <LogOut className="size-[18px] shrink-0" />
             <span className="truncate">Sign out</span>
