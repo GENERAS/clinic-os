@@ -23,13 +23,9 @@ async function loadUserData(supabaseUserId) {
         .from("users")
         .select("id, email, full_name, phone, avatar_url, clinic_id, status, is_super_admin, last_login_at, created_at, updated_at")
         .eq("id", supabaseUserId)
-        .single();
-    if (userError) {
-        console.error("[AuthProvider] loadUserData error:", userError.message, userError.details, userError.hint);
-        return null;
-    }
-    if (!userData) {
-        console.error("[AuthProvider] loadUserData: no user data returned");
+        .maybeSingle();
+    if (userError || !userData) {
+        console.error("[AuthProvider] loadUserData: user not found in public.users — trigger may not have fired");
         return null;
     }
     let clinicData = null;
