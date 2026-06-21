@@ -56,23 +56,23 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-slate-50">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-slate-900 text-slate-50 transition-transform duration-300 lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-slate-900 text-slate-50 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex h-14 items-center gap-3 border-b border-slate-800 px-4">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-teal-600">
+        <div className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-800 px-3 lg:px-4 min-w-0">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-600">
             <Shield className="size-4 text-white" />
           </div>
-          <span className="text-sm font-bold tracking-tight text-white">ClinicOS</span>
+          <span className="text-sm font-bold tracking-tight text-white truncate">ClinicOS</span>
         </div>
 
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-thin">
           {navItems.map((item) => (
             <NavItem key={item.href} item={item} onClose={() => setSidebarOpen(false)} />
           ))}
@@ -82,36 +82,36 @@ export function AdminLayout() {
           <Link
             to="/admin/profile"
             onClick={() => setSidebarOpen(false)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
           >
-            <User className="size-[18px]" />
-            Profile
+            <User className="size-[18px] shrink-0" />
+            <span className="truncate">Profile</span>
           </Link>
           <Link
             to="/dashboard"
             onClick={() => setSidebarOpen(false)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
           >
-            <ArrowLeft className="size-[18px]" />
-            Back to Clinic
+            <ArrowLeft className="size-[18px] shrink-0" />
+            <span className="truncate">Back to Clinic</span>
           </Link>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
           >
-            <LogOut className="size-[18px]" />
-            Sign out
+            <LogOut className="size-[18px] shrink-0" />
+            <span className="truncate">Sign out</span>
           </button>
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col min-w-0">
-        <header className="flex h-14 items-center gap-4 border-b border-slate-200 bg-white px-4 lg:px-6 sticky top-0 z-30">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden -ml-1 rounded-lg p-2 text-slate-400 hover:bg-slate-100 transition-colors">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 shrink-0 items-center gap-2 sm:gap-4 border-b border-slate-200 bg-white px-3 sm:px-4 lg:px-6 sticky top-0 z-30">
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden flex size-10 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors shrink-0">
             <Menu className="size-5" />
           </button>
 
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 min-w-0 max-w-[200px] sm:max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <input
               placeholder="Search clinics, users..."
@@ -119,25 +119,25 @@ export function AdminLayout() {
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <button className="relative rounded-lg p-2 text-slate-400 hover:bg-slate-100 transition-colors">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button className="relative flex size-10 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors">
               <Bell className="size-4" />
-              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-red-500 ring-2 ring-white" />
+              <span className="absolute right-2.5 top-2.5 size-1.5 rounded-full bg-red-500 ring-2 ring-white" />
             </button>
-            <div className="flex items-center gap-2 border-l border-slate-200 pl-3 ml-1">
-              <span className="text-xs text-slate-500 hidden sm:block max-w-[140px] truncate">{user?.email}</span>
-              <Link to="/admin/profile" className="flex size-7 items-center justify-center rounded-full bg-teal-50 text-xs font-medium text-teal-700 hover:bg-teal-100 transition-colors">
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-2 sm:pl-3 ml-1">
+              <span className="text-xs text-slate-500 max-w-[100px] sm:max-w-[140px] truncate">{user?.email}</span>
+              <Link to="/admin/profile" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xs font-medium text-teal-700 hover:bg-teal-100 transition-colors">
                 {(user?.fullName || user?.email || "A")[0].toUpperCase()}
               </Link>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-5 lg:p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 w-full max-w-full">
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-200 bg-white px-6 py-3 text-center text-xs text-slate-400">
+        <footer className="border-t border-slate-200 bg-white px-4 sm:px-6 py-3 text-center text-xs text-slate-400">
           ClinicOS &copy; {new Date().getFullYear()}
         </footer>
       </div>

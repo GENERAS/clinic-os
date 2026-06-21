@@ -173,7 +173,7 @@ export default function DashboardPage() {
 
       {/* ── Big Number Strip ── */}
       {data && (
-        <div className="grid grid-cols-3 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
           <MetricCard label="Waiting now" value={liveKpis.waiting} icon={<Users className="size-4 text-amber-500" />} onClick={() => navigate("/appointments/today")} />
           <MetricCard label="Today" value={liveKpis.today_appointments} icon={<CalendarDays className="size-4 text-blue-500" />} onClick={() => navigate("/appointments/today")} />
           <MetricCard label="Completed" value={liveKpis.completed} icon={<CheckCircle2 className="size-4 text-green-500" />} onClick={() => navigate("/appointments/today")} />
@@ -187,10 +187,10 @@ export default function DashboardPage() {
       )}
 
       {/* ── Main 2-col grid ── */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
 
         {/* ── Left: Appointments ── */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
           {canViewAppointments && !isEmpty && (
             <SectionCard
               title={
@@ -217,7 +217,7 @@ export default function DashboardPage() {
 
           {/* ── Clinical row (compact 3-col inside left) ── */}
           {!isEmpty && (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
               <button onClick={() => navigate("/triage")} className="flex items-center gap-3 rounded-xl border bg-white p-3 text-left shadow-sm hover:bg-slate-50 transition-colors">
                 <div className="flex size-9 items-center justify-center rounded-lg bg-rose-50">
                   <Heart className="size-4 text-rose-500" />
@@ -250,7 +250,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Right sidebar ── */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
 
           {/* Alerts */}
           {hasAlerts && (

@@ -45,8 +45,8 @@ export function MetricCard({ icon: Icon, label, value, trend, action, variant = 
           </span>
         )}
       </div>
-      <div className="flex items-baseline justify-between mt-0.5">
-        <p className={cn("text-xl font-bold tracking-tight", v.value)}>{value ?? "—"}</p>
+      <div className="flex items-baseline justify-between gap-2 mt-0.5">
+        <p className={cn("text-lg sm:text-xl font-bold tracking-tight truncate", v.value)}>{value ?? "—"}</p>
         {action && (
           <button
             onClick={action.onClick}

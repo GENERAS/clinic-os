@@ -115,14 +115,14 @@ export default function AppointmentsPage() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (<div className="flex items-center justify-center gap-2">
-              <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50">
+          {totalPages > 1 && (<div className="flex items-center justify-center gap-2 flex-wrap">
+              <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50 min-h-[44px]">
                 Previous
               </button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground px-2">
                 Page {page + 1} of {totalPages}
               </span>
-              <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50">
+              <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50 min-h-[44px]">
                 Next
               </button>
             </div>)}

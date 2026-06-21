@@ -16,15 +16,16 @@ function NavItem({ item, onClose }) {
       to={item.href}
       onClick={onClose}
       className={cn(
-        "group relative flex items-center gap-3 px-3 py-2 text-sm font-medium transition-all rounded-lg",
+        "group relative flex items-center gap-3 px-3 py-2.5 lg:py-2 text-sm font-medium transition-all rounded-lg",
+        "min-h-[44px]",
         isActive
           ? "bg-slate-800 text-white"
           : "text-slate-400 hover:text-white hover:bg-slate-800/50"
       )}
     >
       <item.icon className="size-[18px] shrink-0" />
-      {item.label}
-      {isActive && <span className="absolute right-2 size-1.5 rounded-full bg-teal-500" />}
+      <span className="truncate">{item.label}</span>
+      {isActive && <span className="absolute right-2 size-1.5 shrink-0 rounded-full bg-teal-500" />}
     </Link>
   );
 }
@@ -46,20 +47,20 @@ export function Sidebar({ isOpen, onClose }) {
     {isOpen && (<div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onClose}/>)}
 
     <aside className={cn(
-      "fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-slate-900 text-slate-50 transition-transform duration-300 lg:static lg:translate-x-0",
+      "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-slate-900 text-slate-50 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
       isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
-      <div className="flex h-14 items-center gap-3 border-b border-slate-800 px-4">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-teal-600">
+      <div className="flex h-14 items-center gap-3 border-b border-slate-800 px-3 lg:px-4 min-w-0">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-teal-600">
           <Hospital className="size-4 text-white" />
         </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-semibold leading-tight text-white">{clinic?.name ?? "ClinicOS"}</span>
-          <span className="text-slate-500 text-[10px] leading-tight">{user?.email ?? ""}</span>
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-semibold leading-tight text-white truncate">{clinic?.name ?? "ClinicOS"}</span>
+          <span className="text-slate-500 text-[10px] leading-tight truncate">{user?.email ?? ""}</span>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2 overflow-y-auto px-2 py-4">
+      <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-2 py-4 scrollbar-thin">
         <NavSection label="Overview">
           <NavItem item={{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }} onClose={onClose} />
         </NavSection>
@@ -97,20 +98,20 @@ export function Sidebar({ isOpen, onClose }) {
         </NavSection>
       </nav>
 
-      <div className="border-t border-slate-800 px-2 py-2">
+      <div className="border-t border-slate-800 px-2 py-2 space-y-0.5">
         {isSuperAdmin && (
           <Link
             to="/admin"
             onClick={onClose}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors mb-0.5"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]"
           >
             <Shield className="size-[18px] shrink-0" />
-            Admin Portal
+            <span className="truncate">Admin Portal</span>
           </Link>
         )}
-        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors">
+        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors min-h-[44px]">
           <LogOut className="size-[18px] shrink-0" />
-          Sign out
+          <span className="truncate">Sign out</span>
         </button>
       </div>
     </aside>
