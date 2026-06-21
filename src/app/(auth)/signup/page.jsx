@@ -3,10 +3,12 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Building2, Loader2, ArrowLeft } from "lucide-react";
 import { authService } from "@/features/auth/services/auth.service";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { toast } from "sonner";
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const { refresh } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
@@ -28,8 +30,15 @@ export default function SignupPage() {
         fullName: form.fullName,
         phone: form.phone,
       });
-      toast.success("Account created! Let's set up your clinic.");
-      navigate("/onboarding");
+      await refresh();
+      const session = await authService.getSession();
+      if (session?.user) {
+        toast.success("Account created! Let's set up your clinic.");
+        navigate("/onboarding");
+      } else {
+        toast.success("Account created! Please check your email to confirm your account.");
+        navigate("/login");
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create account";
       if (msg.includes("rate limit") || msg.includes("429") || msg.includes("Rate limit")) {
