@@ -15,28 +15,15 @@ export function getDemoService() {
 
   return {
     async createDemoClinic(userId) {
-      const clinicRes = await supabase.from("clinics").insert({
-        name: DEMO_CLINIC_NAME,
-        slug: "demo-clinic-" + Date.now(),
-        phone: DEMO_PHONE,
-        status: "active",
-        timezone: "Africa/Kigali",
-        metadata: { is_demo: true, created_by: userId },
-      }).select("id").single();
-      if (clinicRes.error) throw clinicRes.error;
-      const clinicId = clinicRes.data.id;
+      const { data: clinicId, error: clinicError } = await supabase.rpc("create_clinic_onboarding", {
+        p_name: DEMO_CLINIC_NAME,
+        p_slug: "demo-clinic-" + Date.now(),
+        p_phone: DEMO_PHONE,
+        p_timezone: "Africa/Kigali",
+      });
+      if (clinicError || !clinicId) throw clinicError || new Error("Failed to create clinic");
 
-      await supabase.from("users").update({ clinic_id: clinicId }).eq("id", userId);
-
-      await supabase.from("clinics").update({ metadata: { is_demo: true, created_by: userId }, onboarding_completed: true }).eq("id", clinicId);
-
-      const { data: ownerRole } = await supabase.from("roles").select("id").eq("name", "Owner").maybeSingle();
-      if (ownerRole) {
-        await supabase.from("user_roles").insert({ user_id: userId, role_id: ownerRole.id, clinic_id: clinicId });
-      }
-
-      await supabase.from("clinic_preferences").insert({ clinic_id: clinicId, default_appointment_duration: 30, default_appointment_buffer: 5 }).onConflict("clinic_id").doNothing();
-      await supabase.from("clinic_notification_settings").insert({ clinic_id: clinicId }).onConflict("clinic_id").doNothing();
+      await supabase.from("clinics").update({ metadata: { is_demo: true, created_by: userId } }).eq("id", clinicId);
 
       const patientIds = [];
       for (const p of DEMO_PATIENTS) {

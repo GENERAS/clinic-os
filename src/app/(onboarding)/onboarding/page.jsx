@@ -138,29 +138,15 @@ function ClinicSnapshotStep({ onNext, loading, setLoading }) {
         await supabase.from("clinics").update({ name: form.name, phone: form.phone }).eq("id", clinicId);
       } else {
         const slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "clinic";
-        const { data: newClinic } = await supabase.from("clinics").insert({
-          name: form.name,
-          slug: slug + "-" + Date.now(),
-          phone: form.phone,
-          status: "active",
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Kigali",
-        }).select("id").single();
-        if (!newClinic) throw new Error("Failed to create clinic");
-        clinicId = newClinic.id;
-
-        await supabase.from("users").update({ clinic_id: clinicId }).eq("id", user.id);
+        const { data: clinicData, error: clinicError } = await supabase.rpc("create_clinic_onboarding", {
+          p_name: form.name,
+          p_slug: slug + "-" + Date.now(),
+          p_phone: form.phone,
+          p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Kigali",
+        });
+        if (clinicError || !clinicData) throw new Error(clinicError?.message || "Failed to create clinic");
+        clinicId = clinicData;
       }
-
-      const { data: ownerRole } = await supabase.from("roles").select("id").eq("name", "Owner").maybeSingle();
-      if (ownerRole) {
-        const { error: roleError } = await supabase.from("user_roles").insert({ user_id: user.id, role_id: ownerRole.id });
-        if (roleError && roleError.code !== "23505") {
-          throw roleError;
-        }
-      }
-
-      await supabase.from("clinic_preferences").insert({ clinic_id: clinicId, default_appointment_duration: 30, default_appointment_buffer: 5 }).onConflict("clinic_id").doNothing();
-      await supabase.from("clinic_notification_settings").insert({ clinic_id: clinicId }).onConflict("clinic_id").doNothing();
 
       onNext({ id: clinicId });
     } catch (err) {
