@@ -2,7 +2,7 @@
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 function ThemeProvider({ children, ...props }) {
-    return (<NextThemesProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange {...props}>
+    return (<NextThemesProvider attribute="class" defaultTheme="light" disableTransitionOnChange {...props}>
       <ThemeHotkey />
       {children}
     </NextThemesProvider>);

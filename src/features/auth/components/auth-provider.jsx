@@ -1,6 +1,5 @@
 "use client";
-import { createContext, useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getAuditService } from "@/services/database/audit.service";
 import { authService } from "../services/auth.service";
@@ -15,67 +14,40 @@ const initialAuthState = {
     isSuperAdmin: false,
 };
 export const AuthContext = createContext(undefined);
-async function loadUserData(supabaseUserId) {
+async function loadUserData() {
     const supabase = createClient();
     if (!supabase)
         return null;
-    const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id, email, full_name, phone, avatar_url, clinic_id, status, is_super_admin, last_login_at, created_at, updated_at")
-        .eq("id", supabaseUserId)
-        .maybeSingle();
-    if (userError || !userData) {
-        console.error("[AuthProvider] loadUserData: user not found in public.users — trigger may not have fired");
+    const { data, error } = await supabase.rpc("get_user_context");
+    if (error || !data || data.error) {
+        console.error("[AuthProvider] loadUserData failed:", error || data?.error);
         return null;
     }
-    let clinicData = null;
-    if (userData.clinic_id) {
-        const { data: clinic } = await supabase
-            .from("clinics")
-            .select("id, name, slug, onboarding_completed")
-            .eq("id", userData.clinic_id)
-            .maybeSingle();
-        clinicData = clinic;
-    }
-    const { data: roleRows } = await supabase
-        .from("user_roles")
-        .select("roles(id, name)")
-        .eq("user_id", supabaseUserId);
-    const roles = roleRows?.map((r) => {
-        const roleData = r.roles;
-        return { id: roleData.id, name: roleData.name };
-    }) ?? [];
-    const { data: permissionRows } = await supabase
-        .from("role_permissions")
-        .select("permissions(name)")
-        .in("role_id", roles.map((r) => r.id));
-    const permissions = [
-        ...new Set((permissionRows?.map((p) => p.permissions.name) ?? [])),
-    ];
+    const u = data.user_data;
+    const c = data.clinic_data;
     return {
         user: {
-            id: userData.id,
-            email: userData.email,
-            fullName: userData.full_name,
-            phone: userData.phone,
-            avatarUrl: userData.avatar_url,
-            clinicId: userData.clinic_id,
+            id: u.id,
+            email: u.email,
+            fullName: u.full_name,
+            phone: u.phone,
+            avatarUrl: u.avatar_url,
+            clinicId: u.clinic_id,
         },
-        clinic: clinicData ? {
-            id: clinicData.id,
-            name: clinicData.name ?? "",
-            slug: clinicData.slug ?? "",
-            onboarding_completed: clinicData.onboarding_completed ?? false,
+        clinic: c ? {
+            id: c.id,
+            name: c.name ?? "",
+            slug: c.slug ?? "",
+            onboarding_completed: c.onboarding_completed ?? false,
         } : null,
-        roles,
-        permissions,
-        clinicId: userData.clinic_id,
-        isSuperAdmin: !!userData.is_super_admin,
+        roles: data.roles ?? [],
+        permissions: data.permissions ?? [],
+        clinicId: u.clinic_id,
+        isSuperAdmin: !!u.is_super_admin,
     };
 }
 export function AuthProvider({ children }) {
     const [state, setState] = useState(initialAuthState);
-    const navigate = useNavigate();
     const refresh = useCallback(async () => {
         try {
             const supabaseUser = await authService.getCurrentUser();
@@ -83,7 +55,7 @@ export function AuthProvider({ children }) {
                 setState({ ...initialAuthState, isLoading: false });
                 return;
             }
-            const userData = await loadUserData(supabaseUser.id);
+            const userData = await loadUserData();
             if (!userData) {
                 setState({
                     user: { id: supabaseUser.id, email: supabaseUser.email, fullName: "", phone: "", avatarUrl: null, clinicId: null },
@@ -120,26 +92,18 @@ export function AuthProvider({ children }) {
             if (event === "SIGNED_IN") {
                 refresh().then(() => {
                     const sb = createClient();
-                    authService.getCurrentUser().then((supabaseUser) => {
-                        if (supabaseUser) {
-                            loadUserData(supabaseUser.id).then((userData) => {
-                                if (userData) {
-                                    sb
-                                        .from("users")
-                                        .update({ last_login_at: new Date().toISOString() })
-                                        .eq("id", userData.user.id)
-                                        .then(() => {
-                                            getAuditService()
-                                                .log({
-                                                    clinic_id: userData.clinicId,
-                                                    user_id: userData.user.id,
-                                                    action: "login",
-                                                    entity_type: "session",
-                                                    new_value: { email: userData.user.email },
-                                                })
-                                                .catch(() => { });
-                                        });
-                                }
+                    loadUserData().then((userData) => {
+                        if (userData) {
+                            sb.rpc("update_last_login").then(() => {
+                                getAuditService()
+                                    .log({
+                                        clinic_id: userData.clinicId,
+                                        user_id: userData.user.id,
+                                        action: "login",
+                                        entity_type: "session",
+                                        new_value: { email: userData.user.email },
+                                    })
+                                    .catch(() => { });
                             });
                         }
                     });
@@ -172,7 +136,7 @@ export function AuthProvider({ children }) {
         const sessionUser = sessionData.session?.user;
         if (sessionUser) {
             try {
-                const userData = await loadUserData(sessionUser.id);
+                const userData = await loadUserData();
                 if (userData) {
                     getAuditService()
                         .log({
