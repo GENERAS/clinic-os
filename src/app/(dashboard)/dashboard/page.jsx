@@ -22,6 +22,7 @@ import { ActivationChecklist } from "@/components/dashboard/activation-checklist
 import { SubscriptionStatusWidget } from "@/features/subscription/components/subscription-status-widget";
 import { getSubscriptionService } from "@/features/subscription/services/subscription.service";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ export default function DashboardPage() {
       toast.success(`Appointment ${newStatus}`);
       loadDashboard(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update status");
+      toast.error(handleApiError(err, "Failed to update status"));
     } finally {
       setLoadingStatus(null);
     }

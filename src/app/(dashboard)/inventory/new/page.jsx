@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getInventoryService } from "@/features/inventory/services/inventory.service";
 import { createInventoryItemSchema } from "@/features/inventory/schemas";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 export default function NewInventoryItemPage() {
     const navigate = useNavigate();
     const { user, clinic: authClinic } = useAuth();
@@ -44,7 +45,7 @@ export default function NewInventoryItemPage() {
             toast.success("Category created");
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to create category");
+            toast.error(handleApiError(err, "Failed to create category"));
         }
     };
     const onSubmit = async (values) => {
@@ -64,7 +65,7 @@ export default function NewInventoryItemPage() {
             navigate(`/inventory/${item.id}`);
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to create item");
+            toast.error(handleApiError(err, "Failed to create item"));
         }
         finally {
             setSaving(false);

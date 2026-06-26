@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getPharmacyService } from "@/features/pharmacy/services/pharmacy.service";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 const DISPENSE_STATUS_STYLES = {
     pending: "text-amber-600 bg-amber-50",
@@ -108,7 +109,7 @@ export default function PharmacyQueuePage() {
             setShowInventory(false);
             load();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to dispense");
+            toast.error(handleApiError(err, "Failed to dispense"));
         } finally { setSaving(false); }
     }, [selected, dispensing, clinicId, user, service, load]);
 

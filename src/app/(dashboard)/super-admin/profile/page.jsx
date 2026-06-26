@@ -19,6 +19,7 @@ import {
 import {
  toast 
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 function cn(
 ...classes
 ) {
@@ -144,7 +145,7 @@ prev) => (
 err
 ) {
       toast.error(
-err.message || "Failed to update profile"
+handleApiError(err, "Failed to update profile")
 );
     
 } finally {

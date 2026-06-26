@@ -9,6 +9,7 @@ import { ConsultationForm } from "@/features/consultations/components/Consultati
 import { getPatientService } from "@/features/patients/services/patient.service";
 import { getTriageService } from "@/features/triage/services/triage.service";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 const LEGACY_VITAL_MAP = { bp_systolic: "systolic_bp", bp_diastolic: "diastolic_bp", pulse: "heart_rate", spo2: "oxygen_saturation" };
 
@@ -67,7 +68,7 @@ export default function NewConsultationPage() {
             toast.success("Consultation saved as draft");
             navigate(`/consultations/${id}`);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to save consultation");
+            toast.error(handleApiError(err, "Failed to save consultation"));
         } finally {
             setSaving(false);
         }
@@ -93,7 +94,7 @@ export default function NewConsultationPage() {
             toast.success("Consultation completed");
             navigate(`/consultations/${id}`);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to complete consultation");
+            toast.error(handleApiError(err, "Failed to complete consultation"));
         } finally {
             setSaving(false);
         }

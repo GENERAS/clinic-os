@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getPatientService } from "@/features/patients/services/patient.service";
 import { createPatientSchema } from "@/features/patients/schemas";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 export default function NewPatientPage() {
     const navigate = useNavigate();
     const { user, clinic: authClinic } = useAuth();
@@ -42,7 +43,7 @@ export default function NewPatientPage() {
             navigate(`/patients/${patient.id}`);
         }
         catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to create patient";
+            const message = handleApiError(err, "Failed to create patient");
             const existsMatch = message.match(/^PATIENT_EXISTS:([^:]+):(.+)$/);
             if (existsMatch) {
                 toast.error(`Patient "${existsMatch[2]}" already exists with this phone number`);

@@ -14,6 +14,7 @@ import { AppointmentNotes } from "@/features/appointments/components/appointment
 import { QuickActions } from "@/features/appointments/components/quick-actions";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 export default function AppointmentDetailPage() {
     const { id } = useParams();
     const { user, clinic: authClinic } = useAuth();
@@ -65,7 +66,7 @@ export default function AppointmentDetailPage() {
             await loadAppointment();
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to update status");
+            toast.error(handleApiError(err, "Failed to update status"));
         }
     };
     const handleAddNote = async (content) => {

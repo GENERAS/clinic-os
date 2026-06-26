@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, X, RefreshCw } from "lucide-react";
 import { rescheduleAppointmentSchema } from "../schemas";
+import { handleApiError } from "@/lib/errors";
 export function RescheduleDialog({ open, onClose, onReschedule, currentDate, currentStartTime, currentEndTime, }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
@@ -24,7 +25,7 @@ export function RescheduleDialog({ open, onClose, onReschedule, currentDate, cur
             await onReschedule(values);
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to reschedule");
+            setError(handleApiError(err, "Failed to reschedule"));
         }
         finally {
             setSaving(false);

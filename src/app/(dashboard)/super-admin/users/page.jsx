@@ -13,8 +13,9 @@ import {
  Users as UsersIcon, Loader2, Search, Shield, Clock, Mail 
 } from "lucide-react";
 import {
- toast 
+  toast
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 import {
  DataTable, StatusBadge, SearchInput, InlineSelect 
 } from "@/components/admin";
@@ -145,18 +146,18 @@ u.id
 )
 );
       toast.success(
-`${ids.length} user(s) disabled`
-);
-    
-} catch (
-err
-) {
+ `${ids.length} user(s) disabled`
+ );
+     
+ } catch (
+ err
+ ) {
       toast.error(
-err.message || "Failed"
-);
-    
-}  
-}  async function bulkEnable(
+ handleApiError(err, "Failed to disable user(s)")
+ );
+     
+ }
+ }  async function bulkEnable(
 ids
 ) {
     if (
@@ -184,18 +185,18 @@ u.id
 )
 );
       toast.success(
-`${ids.length} user(s) enabled`
-);
-    
-} catch (
-err
-) {
+ `${ids.length} user(s) enabled`
+ );
+     
+ } catch (
+ err
+ ) {
       toast.error(
-err.message || "Failed"
-);
-    
-}  
-}  async function toggleUserStatus(
+ handleApiError(err, "Failed to enable user(s)")
+ );
+     
+ }
+ }  async function toggleUserStatus(
 userId
 ) {
     const user = users.find(
@@ -223,18 +224,18 @@ u) => u.id === userId ? {
 )
 );
       toast.success(
-newStatus === "suspended" ? "User disabled" : "User enabled"
-);
-    
-} catch (
-err
-) {
+ newStatus === "suspended" ? "User disabled" : "User enabled"
+ );
+     
+ } catch (
+ err
+ ) {
       toast.error(
-err.message || "Failed"
-);
-    
-}  
-}  async function resetPassword(
+ handleApiError(err, "Failed to update user status")
+ );
+     
+ }
+ }  async function resetPassword(
 email
 ) {
     try {
@@ -244,18 +245,18 @@ email, {
 }
 );
       toast.success(
-`Password reset email sent to ${email}`
-);
-    
-} catch (
-err
-) {
+ `Password reset email sent to ${email}`
+ );
+     
+ } catch (
+ err
+ ) {
       toast.error(
-err.message || "Failed to send reset email"
-);
-    
-}  
-}  async function changeRole(
+ handleApiError(err, "Failed to send reset email")
+ );
+     
+ }
+ }  async function changeRole(
 userId, isSuperAdmin
 ) {
     try {
@@ -278,15 +279,15 @@ u) => u.id === userId ? {
 )
 );
       toast.success(
-isSuperAdmin ? "User promoted to Super Admin" : "Super Admin role removed"
-);
-    
-} catch (
-err
-) {
+ isSuperAdmin ? "User promoted to Super Admin" : "Super Admin role removed"
+ );
+     
+ } catch (
+ err
+ ) {
       toast.error(
-err.message || "Failed to change role"
-);
+ handleApiError(err, "Failed to change role")
+ );
     
 }  
 }  const columns = [    {

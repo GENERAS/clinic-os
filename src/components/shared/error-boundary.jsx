@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component {
           <div className="w-full max-w-md space-y-4 rounded-xl border p-6 text-center">
             <h1 className="text-xl font-semibold">Something went wrong</h1>
             <p className="text-sm text-muted-foreground">The application encountered an unexpected error.</p>
-            <pre className="overflow-auto rounded-lg bg-muted p-3 text-xs text-left max-h-40">{this.state.error?.message}</pre>
+            <p className="text-sm text-muted-foreground">We have logged this error and will investigate.</p>
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });

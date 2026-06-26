@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Hospital, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { forgotPasswordSchema } from "@/features/auth/schemas";
 import { authService } from "@/features/auth/services/auth.service";
+import { handleApiError } from "@/lib/errors";
 export default function ForgotPasswordPage() {
     const [sent, setSent] = useState(false);
     const [error, setError] = useState(null);
@@ -19,7 +20,7 @@ export default function ForgotPasswordPage() {
             setSent(true);
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong");
+            setError(handleApiError(err, "Something went wrong"));
         }
     }
     return (<div className="bg-card rounded-xl border p-6 shadow-sm">

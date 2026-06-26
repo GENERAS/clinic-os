@@ -12,6 +12,7 @@ import {
 import {
  toast 
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 function cn(
 ...classes
 ) {
@@ -225,7 +226,7 @@ p) => p.id === planId ? {
 err
 ) {
       toast.error(
-err.message || "Failed to update plan"
+handleApiError(err, "Failed to update plan")
 );
     
 } finally {

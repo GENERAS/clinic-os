@@ -9,6 +9,7 @@ import {
   Clock, Calendar, Save, CheckCircle2, XCircle, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 function cn(...classes) { return classes.filter(Boolean).join(" "); }
 
@@ -93,7 +94,7 @@ export default function SuperAdminUserDetail() {
       setEditMode(false);
       toast.success("User updated");
     } catch (err) {
-      toast.error(err.message || "Failed to update user");
+      toast.error(handleApiError(err, "Failed to update user"));
     } finally {
       setSaving(false);
     }
@@ -112,7 +113,7 @@ export default function SuperAdminUserDetail() {
         toast.success("Role added");
       }
     } catch (err) {
-      toast.error(err.message || "Failed to update role");
+      toast.error(handleApiError(err, "Failed to update role"));
     }
   }
 
@@ -125,7 +126,7 @@ export default function SuperAdminUserDetail() {
       if (error) throw error;
       toast.success(`Password reset email sent to ${user.email}`);
     } catch (err) {
-      toast.error(err.message || "Failed to send reset email");
+      toast.error(handleApiError(err, "Failed to send reset email"));
     }
   }
 
@@ -136,7 +137,7 @@ export default function SuperAdminUserDetail() {
       setUser((prev) => ({ ...prev, status: newStatus }));
       toast.success(newStatus === "suspended" ? "User disabled" : "User enabled");
     } catch (err) {
-      toast.error(err.message || "Failed to update user");
+      toast.error(handleApiError(err, "Failed to update user"));
     }
   }
 

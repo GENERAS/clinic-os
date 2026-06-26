@@ -12,6 +12,7 @@ import {
 import {
  toast 
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 function cn(
 ...classes
 ) {
@@ -136,7 +137,7 @@ t) => t.id === id ? {
 err
 ) {
       toast.error(
-err.message || "Failed to update ticket"
+handleApiError(err, "Failed to update ticket")
 );
     
 }  

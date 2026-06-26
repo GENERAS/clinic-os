@@ -14,8 +14,9 @@ import {
   Building2, ChevronDown, Loader2, Search, Ban, CheckCircle,  AlertTriangle, Users, MoreHorizontal, Mail, Send
 } from "lucide-react";
 import {
- toast 
+  toast
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 import {
  DataTable, StatusBadge, SearchInput 
 } from "@/components/admin";
@@ -269,9 +270,9 @@ action === "notify"
 } catch (
 err
 ) {
-      toast.error(
-err.message || "Bulk action failed"
-);
+toast.error(
+      handleApiError(err, "Bulk action failed")
+    );
     
 }  
 }  async function toggleClinicStatus(
@@ -298,9 +299,9 @@ newStatus === "suspended" ? "Clinic suspended" : "Clinic reactivated"
 } catch (
 err
 ) {
-      toast.error(
-err.message || "Failed to update clinic status"
-);
+toast.error(
+      handleApiError(err, "Failed to update clinic status")
+    );
     
 }  
 }  async function changePlan(
@@ -369,9 +370,9 @@ Date.now(
 } catch (
 err
 ) {
-      toast.error(
-err.message || "Failed to change plan"
-);
+toast.error(
+      handleApiError(err, "Failed to change plan")
+    );
     
 }  
 }  const columns = [    {

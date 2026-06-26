@@ -1,3 +1,5 @@
+import { handleApiError } from "@/lib/errors";
+
 export class PaymentProvider {
   async submitPayment(clinicId, subscriptionId, amount, paymentMethod, details) {
     throw new Error("Not implemented");
@@ -52,7 +54,7 @@ async function requestToPayMomo(amount, phone, reference) {
     const result = await payRes.json();
     return { success: payRes.ok, transactionId: result?.financialTransactionId || null, message: result?.message || null };
   } catch (err) {
-    return { success: false, message: err.message };
+    return { success: false, message: handleApiError(err, "MTN MoMo payment failed") };
   }
 }
 
@@ -95,7 +97,7 @@ async function requestToPayAirtel(amount, phone, reference) {
     const result = await payRes.json();
     return { success: payRes.ok, transactionId: result?.transaction?.id || null, message: result?.message || null };
   } catch (err) {
-    return { success: false, message: err.message };
+    return { success: false, message: handleApiError(err, "Airtel Money payment failed") };
   }
 }
 

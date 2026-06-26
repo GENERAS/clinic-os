@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Hospital, Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { resetPasswordSchema } from "@/features/auth/schemas";
 import { authService } from "@/features/auth/services/auth.service";
+import { handleApiError } from "@/lib/errors";
 export default function ResetPasswordPage() {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +21,7 @@ export default function ResetPasswordPage() {
             navigate("/login");
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong");
+            setError(handleApiError(err, "Something went wrong"));
         }
     }
     return (<div className="bg-card rounded-xl border p-6 shadow-sm">

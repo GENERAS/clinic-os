@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Clock, User, Stethoscope } from "lucide-react";
+import { handleApiError } from "@/lib/errors";
 
 export function VisitHistoryList({ clinicId, patientId, service }) {
     const [visits, setVisits] = useState([]);
@@ -13,7 +14,7 @@ export function VisitHistoryList({ clinicId, patientId, service }) {
         setLoading(true);
         service.getPatientVisits(clinicId, patientId)
             .then(setVisits)
-            .catch((err) => setError(err.message))
+            .catch((err) => setError(handleApiError(err, "Failed to load visit history")))
             .finally(() => setLoading(false));
     }, [clinicId, patientId, service]);
 

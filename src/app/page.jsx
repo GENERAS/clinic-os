@@ -4,6 +4,7 @@ import { CalendarDays, Bell, Users, Package, Check, ArrowRight, Smartphone, Buil
 import { useState } from "react";
 import { getDemoService } from "@/features/demo/demo.service";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/client";
 
 const BENEFITS = [
@@ -218,7 +219,7 @@ function DemoButton() {
       toast.success("Demo clinic ready!", { description: "Email: " + demoEmail + " / Pass: " + demoPass });
       navigate("/dashboard");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Demo creation failed. Try signing up instead.");
+      toast.error(handleApiError(err, "Demo creation failed."));
     } finally {
       setLoading(false);
     }

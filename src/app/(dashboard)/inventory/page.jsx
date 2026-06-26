@@ -11,6 +11,7 @@ import { InventoryFilters } from "@/features/inventory/components/inventory-filt
 import { InventoryStatsCards } from "@/features/inventory/components/inventory-stats-cards";
 import { StockAdjustmentDialog } from "@/features/inventory/components/stock-adjustment-dialog";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 const ITEMS_PER_PAGE = 20;
 export default function InventoryPage() {
     const { user, clinic: authClinic } = useAuth();
@@ -78,7 +79,7 @@ export default function InventoryPage() {
             await loadStats();
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to adjust stock");
+            toast.error(handleApiError(err, "Failed to adjust stock"));
         }
     };
     return (<div className="space-y-6">

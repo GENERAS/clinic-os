@@ -8,6 +8,7 @@ import { getTriageService } from "@/features/triage/services/triage.service";
 import { getPatientService } from "@/features/patients/services/patient.service";
 import { TriageForm } from "@/features/triage/components/TriageForm";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export default function NewTriagePage() {
     const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function NewTriagePage() {
             toast.success("Triage completed — patient moved to queue");
             navigate("/triage");
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to save triage");
+            toast.error(handleApiError(err, "Failed to save triage"));
         } finally {
             setSaving(false);
         }

@@ -8,6 +8,7 @@ import { getStaffService } from "@/features/staff/services/staff-service";
 import { StatusBadge } from "@/features/staff/components/status-badge";
 import { RoleBadge } from "@/features/staff/components/role-badge";
 import { createClient } from "@/lib/supabase/client";
+import { handleApiError } from "@/lib/errors";
 function formatDate(dateStr) {
     if (!dateStr)
         return "Never";
@@ -65,7 +66,7 @@ export default function StaffDetailPage() {
             await loadData();
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to update role");
+            setError(handleApiError(err, "Failed to update role"));
         }
         finally {
             setSaving(false);
@@ -83,7 +84,7 @@ export default function StaffDetailPage() {
             await loadData();
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to update status");
+            setError(handleApiError(err, "Failed to update status"));
         }
         finally {
             setSaving(false);
@@ -102,7 +103,7 @@ export default function StaffDetailPage() {
             await loadData();
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to remove staff");
+            setError(handleApiError(err, "Failed to remove staff"));
         }
         finally {
             setSaving(false);

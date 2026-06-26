@@ -11,6 +11,7 @@ import { TransactionHistoryTable } from "@/features/inventory/components/transac
 import { StockAdjustmentDialog } from "@/features/inventory/components/stock-adjustment-dialog";
 import { BatchReceiveDialog } from "@/features/inventory/components/batch-receive-dialog";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 export default function InventoryItemDetailPage() {
     const { id } = useParams();
     const { user, clinic: authClinic } = useAuth();
@@ -58,7 +59,7 @@ export default function InventoryItemDetailPage() {
             setShowReceiveBatch(false);
             await loadItem();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to receive batch");
+            toast.error(handleApiError(err, "Failed to receive batch"));
         }
     };
     const handleAdjust = async (values) => {
@@ -71,7 +72,7 @@ export default function InventoryItemDetailPage() {
             await loadItem();
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to adjust stock");
+            toast.error(handleApiError(err, "Failed to adjust stock"));
         }
     };
     const [editName, setEditName] = useState("");
@@ -103,7 +104,7 @@ export default function InventoryItemDetailPage() {
             await loadItem();
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to update item");
+            toast.error(handleApiError(err, "Failed to update item"));
         }
         finally {
             setSaving(false);

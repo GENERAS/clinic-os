@@ -11,6 +11,7 @@ import { getAppointmentService } from "@/features/appointments/services/appointm
 import { createAppointmentSchema } from "@/features/appointments/schemas";
 import { PatientSearchBar } from "@/features/patients/components/patient-search-bar";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 export default function NewAppointmentPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -68,7 +69,7 @@ export default function NewAppointmentPage() {
             navigate(`/appointments/${appointment.id}`);
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to create appointment");
+            toast.error(handleApiError(err, "Failed to create appointment"));
         }
         finally {
             setSaving(false);

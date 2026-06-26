@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, X, UserPlus } from "lucide-react";
 import { inviteStaffSchema } from "../schemas/staff.schema";
+import { handleApiError } from "@/lib/errors";
 export function InviteStaffDialog({ open, onClose, onInvite, roles }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
@@ -27,7 +28,7 @@ export function InviteStaffDialog({ open, onClose, onInvite, roles }) {
             }, 1500);
         }
         catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to send invitation");
+            setError(handleApiError(err, "Failed to send invitation"));
         }
         finally {
             setSaving(false);

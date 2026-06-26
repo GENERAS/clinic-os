@@ -7,6 +7,7 @@ import { Hospital, Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginSchema } from "@/features/auth/schemas";
 import { authService } from "@/features/auth/services/auth.service";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { handleApiError } from "@/lib/errors";
 export default function LoginPage() {
     const navigate = useNavigate();
     const { isLoading, isAuthenticated } = useAuth();
@@ -26,12 +27,7 @@ export default function LoginPage() {
             await authService.login(data);
         }
         catch (err) {
-            const msg = err instanceof Error ? err.message : "Invalid email or password";
-            if (msg.includes("aborted") || msg.includes("timeout") || msg.includes("fetch")) {
-                setError("Connection lost. Check your network and Supabase project status.");
-            } else {
-                setError(msg);
-            }
+            setError(handleApiError(err, "Invalid email or password"));
         }
     }
     if (isLoading)

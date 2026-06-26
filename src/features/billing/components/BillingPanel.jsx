@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Trash2, Printer, CreditCard, FileText, Download, CheckCircle2, AlertCircle, Shield, Pill, Beaker, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 const SERVICE_CATEGORIES = [
     { value: "consultation", label: "Consultation", icon: Stethoscope },
@@ -107,7 +108,7 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
             setNotes("");
             load();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to create invoice");
+            toast.error(handleApiError(err, "Failed to create invoice"));
         } finally { setSaving(false); }
     }, [items, subtotal, notes, patientId, consultationId, clinicId, userId, service, load]);
 
@@ -127,7 +128,7 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
             setShowPayment(null);
             load();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to record payment");
+            toast.error(handleApiError(err, "Failed to record payment"));
         } finally { setSaving(false); }
     }, [clinicId, patientId, userId, service, showPayment, load]);
 
@@ -147,7 +148,7 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
             setShowInsurance(null);
             load();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to create claim");
+            toast.error(handleApiError(err, "Failed to create claim"));
         } finally { setSaving(false); }
     }, [clinicId, patientId, userId, service, insuranceData, invoices, load]);
 

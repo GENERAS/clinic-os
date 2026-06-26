@@ -12,8 +12,9 @@ import {
 import {
  toast 
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 import {
- MetricCard, StatusBadge, DataTable, SearchInput 
+  MetricCard, StatusBadge, DataTable, SearchInput 
 } from "@/components/admin";
 function cn(
 ...classes
@@ -179,7 +180,7 @@ plan?.price_monthly || 0
 err
 ) {
       toast.error(
-err.message || "Failed to update plan"
+handleApiError(err, "Failed to update plan")
 );
     
 }  
@@ -207,7 +208,7 @@ subId, status
 err
 ) {
       toast.error(
-err.message || "Failed to update"
+handleApiError(err, "Failed to update")
 );
     
 }  

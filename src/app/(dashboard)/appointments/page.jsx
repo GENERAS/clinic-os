@@ -9,6 +9,7 @@ import { AppointmentTable } from "@/features/appointments/components/appointment
 import { AppointmentCard } from "@/features/appointments/components/appointment-card";
 import { AppointmentFilters } from "@/features/appointments/components/appointment-filters";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 const ITEMS_PER_PAGE = 20;
 export default function AppointmentsPage() {
     const { user, clinic: authClinic } = useAuth();
@@ -70,7 +71,7 @@ export default function AppointmentsPage() {
             await loadAppointments();
         }
         catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to update status");
+            toast.error(handleApiError(err, "Failed to update status"));
         }
     };
     const toggleSort = (field) => {

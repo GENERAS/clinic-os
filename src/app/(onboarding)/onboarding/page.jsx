@@ -15,6 +15,7 @@ import { WinMomentCelebration } from "@/features/onboarding/components/win-momen
 import { ConversionTrigger } from "@/features/onboarding/components/conversion-trigger";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 const revenue = getDemoService().getEstimatedLostRevenue();
 
@@ -150,7 +151,7 @@ function ClinicSnapshotStep({ onNext, loading, setLoading }) {
 
       onNext({ id: clinicId });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create clinic");
+      toast.error(handleApiError(err, "Failed to create clinic"));
     } finally {
       setLoading(false);
     }
@@ -258,7 +259,7 @@ function MissionOnePatient({ clinicId, onNext }) {
       toast.success("Patient added successfully");
       onNext();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add patient");
+      toast.error(handleApiError(err, "Failed to add patient"));
     } finally {
       setSaving(false);
     }
@@ -383,7 +384,7 @@ function MissionTwoAppointment({ clinicId, onNext }) {
       toast.success("Appointment created successfully");
       onNext();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create appointment");
+      toast.error(handleApiError(err, "Failed to create appointment"));
     } finally {
       setSaving(false);
     }

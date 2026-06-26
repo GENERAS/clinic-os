@@ -10,6 +10,7 @@ import {
   Activity, ChevronDown, Ban, CheckCircle, Send
 } from "lucide-react";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 function cn(...classes) { return classes.filter(Boolean).join(" "); }
 
@@ -79,7 +80,7 @@ export default function ClinicDetail() {
       setClinic((prev) => ({ ...prev, status: newStatus }));
       toast.success(`Clinic ${newStatus === "suspended" ? "suspended" : "reactivated"}`);
     } catch (err) {
-      toast.error(err.message || "Failed to update");
+      toast.error(handleApiError(err, "Failed to update"));
     }
   }
 
@@ -103,7 +104,7 @@ export default function ClinicDetail() {
       setPlan(planData);
       toast.success("Plan updated");
     } catch (err) {
-      toast.error(err.message || "Failed to update plan");
+      toast.error(handleApiError(err, "Failed to update plan"));
     }
   }
 
@@ -115,7 +116,7 @@ export default function ClinicDetail() {
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, status: newStatus } : u));
       toast.success(newStatus === "suspended" ? "User deactivated" : "User activated");
     } catch (err) {
-      toast.error(err.message || "Failed");
+      toast.error(handleApiError(err, "Operation failed"));
     }
   }
 
@@ -126,7 +127,7 @@ export default function ClinicDetail() {
       });
       toast.success(`Password reset email sent to ${email}`);
     } catch (err) {
-      toast.error(err.message || "Failed to send reset email");
+      toast.error(handleApiError(err, "Failed to send reset email"));
     }
   }
 

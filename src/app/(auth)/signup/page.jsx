@@ -5,6 +5,7 @@ import { Building2, Loader2, ArrowLeft } from "lucide-react";
 import { authService } from "@/features/auth/services/auth.service";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -40,12 +41,7 @@ export default function SignupPage() {
         navigate("/login");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to create account";
-      if (msg.includes("rate limit") || msg.includes("429") || msg.includes("Rate limit")) {
-        toast.error("Too many sign-ups. Please wait a few minutes before trying again.");
-      } else {
-        toast.error(msg);
-      }
+      toast.error(handleApiError(err, "Failed to create account"));
     } finally {
       setLoading(false);
     }

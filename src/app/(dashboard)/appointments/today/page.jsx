@@ -9,6 +9,7 @@ import { getAppointmentService } from "@/features/appointments/services/appointm
 import { AppointmentStatusBadge } from "@/features/appointments/components/appointment-status-badge";
 import { useRealtimeAppointments } from "@/hooks/useRealtimeAppointments";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export default function TodayAppointmentsPage() {
   const { user, clinic: authClinic } = useAuth();
@@ -36,7 +37,7 @@ export default function TodayAppointmentsPage() {
       await service.changeStatus(clinicId, appointmentId, newStatus, user.id);
       toast.success(`Moved to ${newStatus}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update status");
+      toast.error(handleApiError(err, "Failed to update status"));
     }
   };
 

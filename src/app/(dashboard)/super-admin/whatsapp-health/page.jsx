@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { MessageCircle, Loader2, CheckCircle2, AlertTriangle, RefreshCw, Wifi, WifiOff, Search, XCircle, Activity, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 import { cn } from "@/utils/cn";
 import { StatusBadge } from "@/components/admin";
 
@@ -92,7 +93,7 @@ export default function SuperAdminWhatsappHealth() {
     try {
       toast.success("Testing connection... (simulated)");
     } catch (err) {
-      toast.error(err.message || "Connection test failed");
+      toast.error(handleApiError(err, "Connection test failed"));
     }
   }
 

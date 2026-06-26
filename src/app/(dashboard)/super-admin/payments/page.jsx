@@ -6,6 +6,7 @@ import { getPaymentService } from "@/features/subscription/services/payment.serv
 import { getInvoiceService } from "@/features/subscription/services/invoice.service";
 import { Check, X, Loader2, Search, Eye, Download, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export default function SuperAdminPayments() {
   const { user } = useAuth();
@@ -43,7 +44,7 @@ export default function SuperAdminPayments() {
       toast.success("Payment approved — subscription activated");
       loadPayments();
     } catch (err) {
-      toast.error(err.message || "Failed to approve payment");
+      toast.error(handleApiError(err, "Failed to approve payment"));
     } finally {
       setActionLoading(null);
     }
@@ -59,7 +60,7 @@ export default function SuperAdminPayments() {
       setRejectReason("");
       loadPayments();
     } catch (err) {
-      toast.error(err.message || "Failed to reject payment");
+      toast.error(handleApiError(err, "Failed to reject payment"));
     } finally {
       setActionLoading(null);
     }
