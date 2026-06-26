@@ -3,6 +3,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ClipboardList, Loader2, Search, Filter, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 function cn(...classes) { return classes.filter(Boolean).join(" "); }
 
@@ -39,8 +41,8 @@ export default function SuperAdminActivity() {
         ]);
         setLogs(logsRes.data ?? []);
         setClinics(clinicsRes.data ?? []);
-      } catch {
-        // silent
+      } catch (err) {
+        toast.error(handleApiError(err, "Failed to load activity logs"));
       } finally {
         setLoading(false);
       }

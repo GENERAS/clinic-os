@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/utils/cn";
 import { Clock, WifiOff, TrendingUp, MessageCircle, CalendarDays, Users, Loader2, Zap, DollarSign, Ban, Building2, ChevronRight, AlertTriangle, CreditCard, Activity, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 function StatusLabel({ daysLeft }) {
   if (daysLeft == null) return <span className="text-slate-400">—</span>;
@@ -93,8 +94,8 @@ export default function SuperAdminDashboard() {
         enrichedSubs.sort((a, b) => (a.daysLeft ?? 999) - (b.daysLeft ?? 999));
         setSubscriptions(enrichedSubs.filter(s => s.status !== "canceled" && s.status !== "expired").slice(0, 10));
         setRecentActivity(logsRes.data ?? []);
-      } catch {
-        // silent
+      } catch (err) {
+        toast.error(handleApiError(err, "Failed to load dashboard data"));
       } finally {
         setLoading(false);
       }

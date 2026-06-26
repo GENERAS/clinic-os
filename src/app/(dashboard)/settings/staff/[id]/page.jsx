@@ -9,6 +9,7 @@ import { StatusBadge } from "@/features/staff/components/status-badge";
 import { RoleBadge } from "@/features/staff/components/role-badge";
 import { createClient } from "@/lib/supabase/client";
 import { handleApiError } from "@/lib/errors";
+import { toast } from "sonner";
 function formatDate(dateStr) {
     if (!dateStr)
         return "Never";
@@ -44,8 +45,8 @@ export default function StaffDetailPage() {
                 .limit(20);
             setAuditLogs(logs || []);
         }
-        catch {
-            console.error("Failed to load staff details");
+        catch (err) {
+            toast.error(handleApiError(err, "Failed to load staff details"));
         }
         finally {
             setLoading(false);

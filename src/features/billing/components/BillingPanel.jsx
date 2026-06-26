@@ -54,7 +54,7 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
             ]);
             setInvoices(invoicesData);
             setCatalog(catalogData);
-        } catch { toast.error("Failed to load billing data"); }
+        } catch (err) { toast.error(handleApiError(err, "Failed to load billing data")); }
         finally { setLoading(false); }
     }, [clinicId, consultationId, service]);
 

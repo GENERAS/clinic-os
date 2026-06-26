@@ -13,6 +13,7 @@ import {
 import {
   Link
 } from "react-router-dom";
+import { handleApiError } from "@/lib/errors";
 import {
   toast
 } from "sonner";
@@ -232,14 +233,14 @@ export default function PlatformHealth(
             }
           );
 
-        } catch {
+        } catch (err) {
+          toast.error(handleApiError(err, "Failed to load health data"));
           setData(
             {
               messageFailureRate: 0, connectedCreds: 0, failedHealth: 0,              totalCreds: 0, totalMsgs: 0, recentUsers: 0, storageCount: 0,              storageOk: false, dbOk: false, dbLatency: 999, apiOk: false, apiUptime: "0.0",
 
             }
           );
-
         } finally {
           setLoading(
             false

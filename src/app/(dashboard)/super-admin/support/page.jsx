@@ -95,13 +95,10 @@ c) => {
 map
 );
       
-} catch {
-        // silent      
+} catch (err) {
+        toast.error(handleApiError(err, "Failed to load support tickets"));
 } finally {
-        setLoading(
-false
-);
-      
+        setLoading(false);
 }    
 }    fetchData(
 

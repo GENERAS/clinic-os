@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getReportService } from "@/features/reports/services/report.service";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 const PERIODS = [
     { value: "today", label: "Today" },
@@ -74,7 +75,7 @@ export default function ReportsPage() {
                 case "insurance": result = await service.getInsuranceReport(clinicId, period); break;
             }
             setData(result);
-        } catch { toast.error("Failed to load report"); }
+        } catch (err) { toast.error(handleApiError(err, "Failed to load report")); }
         finally { setLoading(false); }
     }, [clinicId, service, tab, period]);
 

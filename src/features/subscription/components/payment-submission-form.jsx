@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export function PaymentSubmissionForm({ methods, instructions, subscription, onBack, onSubmit }) {
   const [method, setMethod] = useState(methods[0]?.slug || "");
@@ -30,8 +31,8 @@ export function PaymentSubmissionForm({ methods, instructions, subscription, onB
         amount: parseFloat(amount),
       });
       toast.success("Payment submitted for verification");
-    } catch {
-      toast.error("Failed to submit payment");
+    } catch (err) {
+      toast.error(handleApiError(err, "Failed to submit payment"));
     } finally {
       setSaving(false);
     }

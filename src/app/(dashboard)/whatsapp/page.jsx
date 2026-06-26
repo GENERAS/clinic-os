@@ -8,6 +8,7 @@ import { getWhatsAppService } from "@/features/whatsapp/services/whatsapp.servic
 import { getWhatsAppAutomationService } from "@/features/whatsapp/services/whatsapp-automation.service";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 const MESSAGE_TYPE_LABELS = {
   appointment_confirmation: "Confirmation",
@@ -172,7 +173,7 @@ export default function WhatsAppPage() {
         });
       }
     } catch (err) {
-      console.error("Failed to load WhatsApp data", err);
+      toast.error(handleApiError(err, "Failed to load WhatsApp data"));
     } finally {
       setLoading(false);
     }

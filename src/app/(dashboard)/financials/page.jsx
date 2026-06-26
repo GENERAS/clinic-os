@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getBillingService } from "@/features/billing/services/billing.service";
 import { MetricCard } from "@/features/dashboard/components/metric-card";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export default function FinancialsPage() {
     const { clinic: authClinic } = useAuth();
@@ -45,7 +46,7 @@ export default function FinancialsPage() {
             ]);
             setSummary(summaryData);
             setRecentInvoices(invoicesData.slice(0, 20));
-        } catch { toast.error("Failed to load financial data"); }
+        } catch (err) { toast.error(handleApiError(err, "Failed to load financial data")); }
         finally { setLoading(false); }
     }, [clinicId, period, service, getDateRange]);
 

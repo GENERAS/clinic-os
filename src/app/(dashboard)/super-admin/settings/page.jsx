@@ -110,13 +110,10 @@ f
 f
 );
       
-} catch {
-        // silent      
+} catch (err) {
+        toast.error(handleApiError(err, "Failed to load settings"));
 } finally {
-        setLoading(
-false
-);
-      
+        setLoading(false);
 }    
 }    fetch(
 
@@ -142,8 +139,8 @@ key, value
 }      
 );
     
-} catch {
-      // silent    
+} catch (err) {
+      toast.error(handleApiError(err, "Failed to save setting"));
 }  
 }  async function handleBrandingSave(
 

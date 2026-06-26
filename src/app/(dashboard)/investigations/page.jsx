@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getInvestigationService } from "@/features/investigations/services/investigation.service";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 const STATUS_OPTIONS = [
     { value: "", label: "All" },
@@ -46,8 +47,8 @@ function ResultEntryForm({ investigation, onSave, onCancel }) {
             });
             toast.success("Result saved");
             onCancel();
-        } catch {
-            toast.error("Failed to save result");
+        } catch (err) {
+            toast.error(handleApiError(err, "Failed to save result"));
         } finally {
             setSaving(false);
         }
@@ -120,8 +121,8 @@ export default function InvestigationsPage() {
         try {
             const data = await service.getInvestigations(clinicId, { pendingOnly: false });
             setInvestigations(data);
-        } catch {
-            toast.error("Failed to load investigations");
+        } catch (err) {
+            toast.error(handleApiError(err, "Failed to load investigations"));
         } finally {
             setLoading(false);
         }

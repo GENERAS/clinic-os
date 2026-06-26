@@ -11,8 +11,9 @@ import {
  Bell, Send, Mail, MessageCircle, Loader2, XCircle, Search 
 } from "lucide-react";
 import {
- toast 
+  toast
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 function cn(
 ...classes
 ) {
@@ -100,13 +101,10 @@ c) => {
 map
 );
       
-} catch {
-        // silent      
+} catch (err) {
+        toast.error(handleApiError(err, "Failed to load notifications"));
 } finally {
-        setLoading(
-false
-);
-      
+        setLoading(false);
 }    
 }    fetchData(
 

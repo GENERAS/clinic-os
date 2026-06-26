@@ -80,8 +80,8 @@ export default function SuperAdminWhatsappHealth() {
         totalWithCreds: credentials.length, todaySent, todayFailed, retryCount,
       });
       setClinics(clinicList);
-    } catch {
-      // silent
+    } catch (err) {
+      toast.error(handleApiError(err, "Failed to load WhatsApp health data"));
     } finally {
       setLoading(false);
     }

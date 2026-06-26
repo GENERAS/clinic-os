@@ -78,13 +78,10 @@ usersRes.data ?? []
 clinicsRes.data ?? []
 );
       
-} catch {
-        // silent      
+} catch (err) {
+        toast.error(handleApiError(err, "Failed to load users"));
 } finally {
-        setLoading(
-false
-);
-      
+        setLoading(false);
 }    
 }    fetch(
 

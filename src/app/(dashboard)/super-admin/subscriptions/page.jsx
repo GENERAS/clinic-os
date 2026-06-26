@@ -81,13 +81,10 @@ plansRes.data ?? []
 clinicsRes.data ?? []
 );
     
-} catch {
-      // silent    
+} catch (err) {
+      toast.error(handleApiError(err, "Failed to load subscriptions"));
 } finally {
-      setLoading(
-false
-);
-    
+      setLoading(false);
 }  
 }  useEffect(
 (

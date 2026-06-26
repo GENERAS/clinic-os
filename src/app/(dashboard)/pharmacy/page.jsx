@@ -38,7 +38,7 @@ export default function PharmacyQueuePage() {
             ]);
             setPrescriptions(data);
             setStats(statsData);
-        } catch { toast.error("Failed to load pharmacy queue"); }
+        } catch (err) { toast.error(handleApiError(err, "Failed to load pharmacy queue")); }
         finally { setLoading(false); }
     }, [clinicId, service]);
 
@@ -88,7 +88,7 @@ export default function PharmacyQueuePage() {
                 });
                 setShowInventory(true);
             }
-        } catch { toast.error("Failed to load inventory data"); }
+        } catch (err) { toast.error(handleApiError(err, "Failed to load inventory data")); }
     }, [clinicId, service]);
 
     const handleDispense = useCallback(async () => {

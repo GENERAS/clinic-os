@@ -91,13 +91,10 @@ data
 );
         
 }      
-} catch {
-        // silent      
+} catch (err) {
+        toast.error(handleApiError(err, "Failed to load profile"));
 } finally {
-        setLoading(
-false
-);
-      
+        setLoading(false);
 }    
 }    fetch(
 

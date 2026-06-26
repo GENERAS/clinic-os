@@ -11,8 +11,9 @@ import {
  BarChart3, Loader2, TrendingUp, Users, MessageCircle, CalendarDays, Download, Filter 
 } from "lucide-react";
 import {
- toast 
+  toast
 } from "sonner";
+import { handleApiError } from "@/lib/errors";
 function cn(
 ...classes
 ) {
@@ -278,13 +279,10 @@ subs, plansMap, range
 }
 );
       
-} catch {
-        // silent      
+} catch (err) {
+        toast.error(handleApiError(err, "Failed to load analytics"));
 } finally {
-        setLoading(
-false
-);
-      
+        setLoading(false);
 }    
 }    fetchAll(
 

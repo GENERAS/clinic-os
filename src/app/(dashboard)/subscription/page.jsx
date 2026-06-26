@@ -13,6 +13,7 @@ import { BillingHistoryTable } from "@/features/subscription/components/billing-
 import { PaymentSubmissionForm } from "@/features/subscription/components/payment-submission-form";
 import { GracePeriodBanner } from "@/features/subscription/components/grace-period-banner";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 
 export default function SubscriptionPage() {
   const { user, clinic: authClinic } = useAuth();
@@ -51,8 +52,8 @@ export default function SubscriptionPage() {
         setPlan(allPlans.find((p) => p.id === sub.plan_id) || null);
         setDaysRemaining(await subscriptionService.getDaysRemaining(sub));
       }
-    } catch {
-      toast.error("Failed to load subscription data");
+    } catch (err) {
+      toast.error(handleApiError(err, "Failed to load subscription data"));
     } finally {
       setLoading(false);
     }
@@ -71,8 +72,8 @@ export default function SubscriptionPage() {
         await subscriptionService.renewSubscription(clinicId, selectedPlan.id, "monthly", selectedPlan.price_monthly);
         setShowRenewal(true);
       }
-    } catch {
-      toast.error("Failed to process plan selection");
+    } catch (err) {
+      toast.error(handleApiError(err, "Failed to process plan selection"));
     }
   };
 
