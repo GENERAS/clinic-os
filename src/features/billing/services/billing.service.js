@@ -89,7 +89,10 @@ export class BillingService {
                     total: (item.quantity || 1) * item.unit_price,
                     service_catalog_id: item.service_catalog_id || null,
                 })));
-            if (itemsError) throw itemsError;
+            if (itemsError) {
+                await this.supabase.from("billing_invoices").delete().eq("id", invoice.id);
+                throw itemsError;
+            }
         }
 
         return invoice.id;

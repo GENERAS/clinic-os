@@ -537,7 +537,124 @@ export function getWhatsAppAutomationService() {
       return { response: "booked", conversationId: conversation.id };
     }
 
-    if (step === "reschedule" || text.includes("reschedule")) {
+    if (step === "reschedule_choose") {
+      const idx = parseInt(text) - 1;
+      const appts = conversation.context?.appointments || [];
+      if (isNaN(idx) || idx < 0 || idx >= appts.length) {
+        await simulation.sendMessage(clinicId, {
+          phone_number: phoneNumber,
+          message_type: "reschedule",
+          message_template: "reschedule",
+          message_content: `Please reply with a valid number (1-${appts.length}).`,
+        });
+        return { response: "reschedule_choose", conversationId: conversation.id };
+      }
+      const selectedAppt = appts[idx];
+      await supabase.from("whatsapp_conversations").update({
+        current_step: "reschedule_date",
+        context: { ...conversation.context, rescheduleAppointmentId: selectedAppt.id },
+      }).eq("id", conversation.id);
+      const d = new Date();
+      const minDate = d.toISOString().split("T")[0];
+      d.setDate(d.getDate() + 14);
+      const maxDate = d.toISOString().split("T")[0];
+      await simulation.sendMessage(clinicId, {
+        phone_number: phoneNumber,
+        message_type: "reschedule",
+        message_template: "reschedule",
+        message_content: `When would you like to reschedule to?\nReply with a date (YYYY-MM-DD) between ${minDate} and ${maxDate}.`,
+      });
+      return { response: "reschedule_date", conversationId: conversation.id };
+    }
+
+    if (step === "reschedule_date") {
+      const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+      if (!datePattern.test(text.trim())) {
+        await simulation.sendMessage(clinicId, {
+          phone_number: phoneNumber,
+          message_type: "reschedule",
+          message_template: "reschedule",
+          message_content: "Please reply with a valid date in YYYY-MM-DD format (e.g. 2026-07-15).",
+        });
+        return { response: "reschedule_date", conversationId: conversation.id };
+      }
+      await supabase.from("whatsapp_conversations").update({
+        current_step: "reschedule_time",
+        context: { ...conversation.context, rescheduleDate: text.trim() },
+      }).eq("id", conversation.id);
+      const slots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
+      const { data: existingAppts } = await supabase
+        .from("appointments")
+        .select("start_time")
+        .eq("clinic_id", clinicId)
+        .eq("appointment_date", text.trim())
+        .in("status", ["scheduled", "confirmed", "arrived"]);
+      const bookedSlots = new Set((existingAppts || []).map((a) => a.start_time));
+      const availableSlots = slots.filter((s) => !bookedSlots.has(s));
+      if (availableSlots.length === 0) {
+        await simulation.sendMessage(clinicId, {
+          phone_number: phoneNumber,
+          message_type: "reschedule",
+          message_template: "reschedule",
+          message_content: "No available slots on this date. Please try a different date.\nReply with another date (YYYY-MM-DD).",
+        });
+        await supabase.from("whatsapp_conversations").update({ current_step: "reschedule_date" }).eq("id", conversation.id);
+        return { response: "reschedule_date", conversationId: conversation.id };
+      }
+      await simulation.sendMessage(clinicId, {
+        phone_number: phoneNumber,
+        message_type: "reschedule",
+        message_template: "reschedule",
+        message_content: `Available times on ${text.trim()}:\n${availableSlots.map((s, i) => `${i + 1}. ${s.substring(0, 5)}`).join("\n")}\n\nReply with the number.`,
+      });
+      return { response: "reschedule_time", conversationId: conversation.id };
+    }
+
+    if (step === "reschedule_time") {
+      const timeIndex = parseInt(text) - 1;
+      const slots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
+      const { data: existingAppts } = await supabase
+        .from("appointments")
+        .select("start_time")
+        .eq("clinic_id", clinicId)
+        .eq("appointment_date", conversation.context?.rescheduleDate)
+        .in("status", ["scheduled", "confirmed", "arrived"]);
+      const bookedSlots = new Set((existingAppts || []).map((a) => a.start_time));
+      const availableSlots = slots.filter((s) => !bookedSlots.has(s));
+      if (isNaN(timeIndex) || timeIndex < 0 || timeIndex >= availableSlots.length) {
+        await simulation.sendMessage(clinicId, {
+          phone_number: phoneNumber,
+          message_type: "reschedule",
+          message_template: "reschedule",
+          message_content: `Please reply with a valid number (1-${availableSlots.length}).`,
+        });
+        return { response: "reschedule_time", conversationId: conversation.id };
+      }
+      const selectedTime = availableSlots[timeIndex];
+      await supabase
+        .from("appointments")
+        .update({
+          appointment_date: conversation.context?.rescheduleDate,
+          start_time: selectedTime,
+          end_time: adjustTime(selectedTime, 30),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", conversation.context?.rescheduleAppointmentId)
+        .eq("clinic_id", clinicId);
+      await simulation.sendMessage(clinicId, {
+        phone_number: phoneNumber,
+        message_type: "reschedule",
+        message_template: "reschedule",
+        message_content: `✅ Appointment rescheduled!\n📅 ${conversation.context?.rescheduleDate}\n⏰ ${selectedTime.substring(0, 5)}\n\nReply 'MENU' for options.`,
+      });
+      await supabase.from("whatsapp_conversations").update({
+        session_status: "completed",
+        ended_at: new Date().toISOString(),
+      }).eq("id", conversation.id);
+      return { response: "rescheduled", conversationId: conversation.id };
+    }
+
+    if ((step === "menu" || !step) && text.toLowerCase().includes("reschedule")) {
       const { data: appointments } = await supabase
         .from("appointments")
         .select("id, appointment_date, start_time")
@@ -546,7 +663,26 @@ export function getWhatsAppAutomationService() {
         .in("status", ["scheduled", "confirmed"])
         .order("appointment_date", { ascending: true })
         .limit(5);
-      // ...existing code...
+      if (!appointments || appointments.length === 0) {
+        await simulation.sendMessage(clinicId, {
+          phone_number: phoneNumber,
+          message_type: "reschedule",
+          message_template: "reschedule",
+          message_content: "You have no upcoming appointments to reschedule.\n\nReply 'MENU' for other options.",
+        });
+        return { response: "menu", conversationId: conversation.id };
+      }
+      await supabase.from("whatsapp_conversations").update({
+        current_step: "reschedule_choose",
+        context: { ...conversation.context, appointments: appointments.map(a => ({ id: a.id, date: a.appointment_date, time: a.start_time })) },
+      }).eq("id", conversation.id);
+      await simulation.sendMessage(clinicId, {
+        phone_number: phoneNumber,
+        message_type: "reschedule",
+        message_template: "reschedule",
+        message_content: `Your upcoming appointments:\n${appointments.map((a, i) => `${i + 1}. ${a.appointment_date} at ${a.start_time?.substring(0, 5)}`).join("\n")}\n\nReply with the number to reschedule.`,
+      });
+      return { response: "reschedule_choose", conversationId: conversation.id };
     }
 
     const menuText = await getMenu();

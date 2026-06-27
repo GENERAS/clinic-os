@@ -138,8 +138,8 @@ export default function FinancialsPage() {
 
                             <SectionCard title="Quick Actions">
                                 <div className="space-y-1.5">
-                                    <Link to="/financials" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/30 transition-colors">
-                                        <CreditCard className="size-3.5" /> View All Invoices
+                                    <Link to="/reports" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/30 transition-colors">
+                                        <CreditCard className="size-3.5" /> View Reports
                                     </Link>
                                     <Link to="/triage" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/30 transition-colors">
                                         <TrendingUp className="size-3.5" /> Today's Queue

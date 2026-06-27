@@ -191,7 +191,7 @@ export default function SubscriptionPage() {
         <SectionCard title="Submit Payment" description="Complete your renewal payment">
           <PaymentSubmissionForm
             methods={paymentMethods}
-            instructions={{}}
+            instructions={Object.fromEntries(paymentMethods.map(m => [m.slug, m.instructions || ""]))}
             subscription={subscription}
             onBack={() => setShowRenewal(false)}
             onSubmit={handlePaymentSubmit}

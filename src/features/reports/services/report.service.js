@@ -35,27 +35,33 @@ export function getReportService() {
 
     async function getPatientReport(clinicId, period = "today") {
         const { start, end } = dateRange(period);
-        const [patients, consultations, newPatients] = await Promise.all([
-            supabase.from("patients").select("id, gender, date_of_birth, created_at", { count: "exact", head: true }).eq("clinic_id", clinicId),
+        const [patients, consultations, newPatientsCount] = await Promise.all([
+            supabase.from("patients").select("gender").eq("clinic_id", clinicId),
             supabase.from("consultations").select("id, patient_id, created_at").eq("clinic_id", clinicId).gte("created_at", start).lte("created_at", end),
             supabase.from("patients").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId).gte("created_at", start).lte("created_at", end),
         ]);
-        const genderQuery = await supabase.from("patients").select("gender").eq("clinic_id", clinicId);
-        const genderBreakdown = (genderQuery.data || []).reduce((acc, p) => { acc[p.gender || "unknown"] = (acc[p.gender || "unknown"] || 0) + 1; return acc; }, {});
-        return { total_patients: patients.count || 0, new_patients: newPatients.count || 0, total_visits: consultations.data?.length || 0, gender_breakdown: genderBreakdown };
+        const allPatients = patients.data || [];
+        const genderBreakdown = allPatients.reduce((acc, p) => { acc[p.gender || "unknown"] = (acc[p.gender || "unknown"] || 0) + 1; return acc; }, {});
+        return { total_patients: allPatients.length, new_patients: newPatientsCount.count || 0, total_visits: consultations.data?.length || 0, gender_breakdown: genderBreakdown };
     }
 
     async function getClinicalReport(clinicId, period = "today") {
         const { start, end } = dateRange(period);
-        const [consultations, diagnoses, prescriptions, labTests] = await Promise.all([
-            supabase.from("consultations").select("id, status, created_at").eq("clinic_id", clinicId).gte("created_at", start).lte("created_at", end),
-            supabase.from("diagnoses").select("diagnosis_code, diagnosis_name, consultation_id").in("consultation_id", (await supabase.from("consultations").select("id").eq("clinic_id", clinicId).gte("created_at", start).lte("created_at", end)).data?.map(c => c.id) || []),
-            supabase.from("prescriptions").select("id, medicine_name").in("consultation_id", (await supabase.from("consultations").select("id").eq("clinic_id", clinicId).gte("created_at", start).lte("created_at", end)).data?.map(c => c.id) || []),
-            supabase.from("investigations").select("id, test_name, status").in("consultation_id", (await supabase.from("consultations").select("id").eq("clinic_id", clinicId).gte("created_at", start).lte("created_at", end)).data?.map(c => c.id) || []),
-        ]);
+        const { data: consultationIds } = await supabase
+            .from("consultations")
+            .select("id, status")
+            .eq("clinic_id", clinicId)
+            .gte("created_at", start)
+            .lte("created_at", end);
+        const ids = (consultationIds || []).map(c => c.id);
+        const [diagnoses, prescriptions, labTests] = ids.length > 0 ? await Promise.all([
+            supabase.from("diagnoses").select("diagnosis_code, diagnosis_name").in("consultation_id", ids),
+            supabase.from("prescriptions").select("id, medicine_name").in("consultation_id", ids),
+            supabase.from("investigations").select("id, test_name, status").in("consultation_id", ids),
+        ]) : [{ data: [] }, { data: [] }, { data: [] }];
         const diagData = diagnoses.data || [];
         const topDiagnoses = Object.entries(diagData.reduce((acc, d) => { acc[d.diagnosis_name] = (acc[d.diagnosis_name] || 0) + 1; return acc; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 10);
-        return { total_consultations: consultations.data?.length || 0, completed: consultations.data?.filter(c => c.status === "completed").length || 0, total_prescriptions: prescriptions.data?.length || 0, total_lab_orders: labTests.data?.length || 0, pending_labs: labTests.data?.filter(l => l.status === "pending").length || 0, top_diagnoses: topDiagnoses.map(([name, count]) => ({ name, count })) };
+        return { total_consultations: consultationIds?.length || 0, completed: (consultationIds || []).filter(c => c.status === "completed").length || 0, total_prescriptions: prescriptions.data?.length || 0, total_lab_orders: labTests.data?.length || 0, pending_labs: labTests.data?.filter(l => l.status === "pending").length || 0, top_diagnoses: topDiagnoses.map(([name, count]) => ({ name, count })) };
     }
 
     async function getPharmacyReport(clinicId, period = "today") {

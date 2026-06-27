@@ -274,6 +274,33 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Activity Feed */}
+          {data?.recentActivity?.length > 0 && (
+            <SectionCard title={
+              <div className="flex items-center gap-1.5">
+                <RefreshCw className="size-3.5 text-slate-500" />
+                <span className="text-xs font-semibold">Recent Activity</span>
+              </div>
+            }>
+              <div className="max-h-[200px] overflow-y-auto space-y-1">
+                {data.recentActivity.slice(0, 10).map((act) => (
+                  <div key={act.id} className="flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50 transition-colors">
+                    <div className="mt-0.5 size-1.5 rounded-full bg-teal-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-slate-600 leading-tight">
+                        <span className="font-medium text-slate-800">{act.user_name}</span>{" "}
+                        {act.action}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {new Date(act.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
           {/* Notifications compact */}
           {hasNotifications && (
             <SectionCard title={
