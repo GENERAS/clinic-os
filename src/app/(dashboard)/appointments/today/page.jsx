@@ -1,7 +1,8 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Calendar, Phone, Clock, Stethoscope } from "lucide-react";
+import { DndContext, PointerSensor, useSensor, useSensors, useDroppable, useDraggable } from "@dnd-kit/core";
 import { PageHeader } from "@/components/shared/page-header";
 import { RealtimeStatusBadge } from "@/components/shared/realtime-status-badge";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -11,25 +12,35 @@ import { useRealtimeAppointments } from "@/hooks/useRealtimeAppointments";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
 
+const COLUMNS = [
+  { id: "upcoming", title: "Upcoming", statuses: ["scheduled", "confirmed"], dropStatus: "arrived", color: "bg-blue-50 border-blue-200", textColor: "text-blue-700" },
+  { id: "waiting", title: "Waiting", statuses: ["arrived"], dropStatus: "in_progress", color: "bg-amber-50 border-amber-200", textColor: "text-amber-700" },
+  { id: "inProgress", title: "In Progress", statuses: ["in_progress"], dropStatus: "completed", color: "bg-purple-50 border-purple-200", textColor: "text-purple-700" },
+  { id: "completed", title: "Completed", statuses: ["completed"], dropStatus: null, color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700" },
+  { id: "noShow", title: "No Show", statuses: ["cancelled", "no_show"], dropStatus: null, color: "bg-red-50 border-red-200", textColor: "text-red-700" },
+];
+
 export default function TodayAppointmentsPage() {
   const { user, clinic: authClinic } = useAuth();
   const clinicId = authClinic?.id;
   const service = getAppointmentService();
 
   const { appointments, loading, status } = useRealtimeAppointments(clinicId);
+  const [activeId, setActiveId] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   const today = new Date().toISOString().split("T")[0];
-  const todayAppts = useMemo(() => {
-    return appointments.filter((a) => a.appointment_date === today);
+  const columnAppts = useMemo(() => {
+    const todayApts = appointments.filter((a) => a.appointment_date === today);
+    const grouped = {};
+    for (const col of COLUMNS) {
+      grouped[col.id] = todayApts.filter((a) => col.statuses.includes(a.status));
+    }
+    return grouped;
   }, [appointments, today]);
-
-  const { upcoming, waiting, inProgress, completed, noShow } = useMemo(() => ({
-    upcoming: todayAppts.filter((a) => a.status === "scheduled" || a.status === "confirmed"),
-    waiting: todayAppts.filter((a) => a.status === "arrived"),
-    inProgress: todayAppts.filter((a) => a.status === "in_progress"),
-    completed: todayAppts.filter((a) => a.status === "completed"),
-    noShow: todayAppts.filter((a) => a.status === "cancelled" || a.status === "no_show"),
-  }), [todayAppts]);
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     if (!clinicId || !user) return;
@@ -39,6 +50,18 @@ export default function TodayAppointmentsPage() {
     } catch (err) {
       toast.error(handleApiError(err, "Failed to update status"));
     }
+  };
+
+  const handleDragEnd = (event) => {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const appointmentId = active.id;
+    const targetColumn = COLUMNS.find((c) => c.id === over.id);
+    if (!targetColumn || !targetColumn.dropStatus) return;
+    const sourceColumn = COLUMNS.find((c) => c.statuses.includes(active.data.current.status));
+    if (!sourceColumn || sourceColumn.id === targetColumn.id) return;
+    handleStatusChange(appointmentId, targetColumn.dropStatus);
   };
 
   const todayLabel = new Date().toLocaleDateString(undefined, {
@@ -66,45 +89,28 @@ export default function TodayAppointmentsPage() {
           <div className="border-primary size-6 animate-spin rounded-full border-2 border-t-transparent"/>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          <KanbanColumn title="Upcoming" count={upcoming.length} color="bg-blue-50 border-blue-200" textColor="text-blue-700">
-            {upcoming.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} onStatusChange={handleStatusChange} nextStatus="arrived" nextLabel="Mark arrived"/>
+        <DndContext sensors={sensors} onDragStart={(e) => setActiveId(e.active.id)} onDragEnd={handleDragEnd}>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {COLUMNS.map((col) => (
+              <DroppableColumn key={col.id} id={col.id} title={col.title} count={columnAppts[col.id].length} color={col.color} textColor={col.textColor} isOver={activeId && col.dropStatus !== null}>
+                {columnAppts[col.id].map((apt) => (
+                  <DraggableCard key={apt.id} id={apt.id} appointment={apt} onStatusChange={handleStatusChange} nextStatus={col.dropStatus} nextLabel={DROPPABLE_LABELS[col.id] || ""} isActive={activeId === apt.id}/>
+                ))}
+              </DroppableColumn>
             ))}
-          </KanbanColumn>
-
-          <KanbanColumn title="Waiting" count={waiting.length} color="bg-amber-50 border-amber-200" textColor="text-amber-700">
-            {waiting.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} onStatusChange={handleStatusChange} nextStatus="in_progress" nextLabel="Start"/>
-            ))}
-          </KanbanColumn>
-
-          <KanbanColumn title="In Progress" count={inProgress.length} color="bg-purple-50 border-purple-200" textColor="text-purple-700">
-            {inProgress.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} onStatusChange={handleStatusChange} nextStatus="completed" nextLabel="Complete"/>
-            ))}
-          </KanbanColumn>
-
-          <KanbanColumn title="Completed" count={completed.length} color="bg-emerald-50 border-emerald-200" textColor="text-emerald-700">
-            {completed.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} onStatusChange={null} nextLabel=""/>
-            ))}
-          </KanbanColumn>
-
-          <KanbanColumn title="No Show" count={noShow.length} color="bg-red-50 border-red-200" textColor="text-red-700">
-            {noShow.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} onStatusChange={null} nextLabel=""/>
-            ))}
-          </KanbanColumn>
-        </div>
+          </div>
+        </DndContext>
       )}
     </div>
   );
 }
 
-function KanbanColumn({ title, count, color, textColor, children }) {
+const DROPPABLE_LABELS = { upcoming: "Mark arrived", waiting: "Start", inProgress: "Complete" };
+
+function DroppableColumn({ id, title, count, color, textColor, children, isOver }) {
+  const { setNodeRef, isOver: over } = useDroppable({ id, disabled: !isOver });
   return (
-    <div className={`rounded-xl border ${color} ${textColor}`}>
+    <div ref={setNodeRef} className={`rounded-xl border transition-shadow ${color} ${textColor} ${over ? "shadow-lg ring-2 ring-primary/50" : ""}`}>
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-inherit/50">
         <h3 className="text-sm font-semibold">{title}</h3>
         <span className="text-xs font-medium opacity-70">{count}</span>
@@ -116,9 +122,18 @@ function KanbanColumn({ title, count, color, textColor, children }) {
   );
 }
 
-function AppointmentCard({ appointment: apt, onStatusChange, nextStatus, nextLabel }) {
+function DraggableCard({ id, appointment: apt, onStatusChange, nextStatus, nextLabel, isActive }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id,
+    data: { status: apt.status },
+  });
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 50,
+  } : undefined;
   return (
-    <div className="bg-white rounded-lg border p-3 shadow-sm hover:shadow transition-shadow">
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}
+      className={`bg-white rounded-lg border p-3 shadow-sm transition-shadow ${isDragging ? "shadow-xl opacity-80 rotate-2" : "hover:shadow"} ${isActive ? "ring-2 ring-primary" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-[#0a2540]">{apt.patient_name}</p>
@@ -137,19 +152,19 @@ function AppointmentCard({ appointment: apt, onStatusChange, nextStatus, nextLab
       <p className="text-xs text-muted-foreground mt-1">{apt.doctor?.full_name}</p>
       <div className="flex items-center gap-1.5 mt-2.5">
         {apt.patient_phone && (
-          <a href={`tel:${apt.patient_phone}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
+          <a href={`tel:${apt.patient_phone}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors" onClick={(e) => e.stopPropagation()}>
             <Phone className="size-3"/>
             Call
           </a>
         )}
         {apt.patient_id && apt.status !== "completed" && (
-          <Link to={`/consultations/new?appointmentId=${apt.id}&patientId=${apt.patient_id}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-purple-700 border-purple-200 hover:bg-purple-50 transition-colors">
+          <Link to={`/consultations/new?appointmentId=${apt.id}&patientId=${apt.patient_id}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-purple-700 border-purple-200 hover:bg-purple-50 transition-colors" onClick={(e) => e.stopPropagation()}>
             <Stethoscope className="size-3"/>
             Consult
           </Link>
         )}
-        {onStatusChange && (
-          <button onClick={() => onStatusChange(apt.id, nextStatus)} className="inline-flex items-center gap-1 rounded-md bg-primary/90 px-2 py-1 text-xs font-medium text-white hover:bg-primary transition-colors">
+        {onStatusChange && nextLabel && (
+          <button onClick={(e) => { e.stopPropagation(); onStatusChange(apt.id, nextStatus); }} className="inline-flex items-center gap-1 rounded-md bg-primary/90 px-2 py-1 text-xs font-medium text-white hover:bg-primary transition-colors">
             {nextLabel}
           </button>
         )}

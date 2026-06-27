@@ -18,6 +18,7 @@ const PERIODS = [
     { value: "7", label: "Last 7 Days" },
     { value: "30", label: "Last 30 Days" },
     { value: "90", label: "Last 90 Days" },
+    { value: "custom", label: "Custom Range" },
 ];
 
 const REPORT_TABS = [
@@ -56,6 +57,8 @@ export default function ReportsPage() {
     const clinicId = authClinic?.id;
     const service = useMemo(() => getReportService(), []);
     const [period, setPeriod] = useState("today");
+    const [customStart, setCustomStart] = useState("");
+    const [customEnd, setCustomEnd] = useState("");
     const [tab, setTab] = useState("revenue");
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -65,19 +68,22 @@ export default function ReportsPage() {
         if (!clinicId) return;
         setLoading(true);
         try {
+            const periodParam = period === "custom" && customStart && customEnd
+                ? { start: customStart, end: customEnd }
+                : period;
             let result;
             switch (tab) {
-                case "revenue": result = await service.getRevenueReport(clinicId, period); break;
-                case "patients": result = await service.getPatientReport(clinicId, period); break;
-                case "clinical": result = await service.getClinicalReport(clinicId, period); break;
-                case "pharmacy": result = await service.getPharmacyReport(clinicId, period); break;
-                case "providers": result = await service.getProviderReport(clinicId, period); break;
-                case "insurance": result = await service.getInsuranceReport(clinicId, period); break;
+                case "revenue": result = await service.getRevenueReport(clinicId, periodParam); break;
+                case "patients": result = await service.getPatientReport(clinicId, periodParam); break;
+                case "clinical": result = await service.getClinicalReport(clinicId, periodParam); break;
+                case "pharmacy": result = await service.getPharmacyReport(clinicId, periodParam); break;
+                case "providers": result = await service.getProviderReport(clinicId, periodParam); break;
+                case "insurance": result = await service.getInsuranceReport(clinicId, periodParam); break;
             }
             setData(result);
         } catch (err) { toast.error(handleApiError(err, "Failed to load report")); }
         finally { setLoading(false); }
-    }, [clinicId, service, tab, period]);
+    }, [clinicId, service, tab, period, customStart, customEnd]);
 
     useEffect(() => { load(); }, [load]);
 
@@ -120,13 +126,21 @@ export default function ReportsPage() {
                     {periodOpen && (
                         <>
                             <div className="fixed inset-0 z-10" onClick={() => setPeriodOpen(false)} />
-                            <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-xl border bg-white p-1 shadow-lg">
+                            <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border bg-white p-1 shadow-lg">
                                 {PERIODS.map(p => (
-                                    <button key={p.value} onClick={() => { setPeriod(p.value); setPeriodOpen(false); }}
+                                    <button key={p.value} onClick={() => { setPeriod(p.value); if (p.value !== "custom") setPeriodOpen(false); }}
                                         className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors ${period === p.value ? "bg-primary/10 text-primary" : "hover:bg-muted/30"}`}>
                                         {p.label}
                                     </button>
                                 ))}
+                                {period === "custom" && (
+                                    <div className="space-y-2 border-t px-2 py-2">
+                                        <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)}
+                                            className="w-full rounded-lg border border-border/80 bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring" />
+                                        <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
+                                            className="w-full rounded-lg border border-border/80 bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring" />
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}

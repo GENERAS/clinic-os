@@ -4,6 +4,9 @@ export function getReportService() {
     const supabase = createClient();
 
     function dateRange(period) {
+        if (period && typeof period === "object" && period.start && period.end) {
+            return { start: new Date(period.start).toISOString(), end: new Date(period.end).toISOString() };
+        }
         const now = new Date();
         const y = now.getFullYear();
         const m = now.getMonth();
