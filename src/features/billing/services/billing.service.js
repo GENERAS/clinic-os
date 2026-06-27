@@ -40,8 +40,7 @@ export class BillingService {
             .select(`
                 *,
                 billing_line_items(*),
-                patient_payments(*),
-                insurance_claims!insurance_claims_invoice_id_fkey(*)
+                patient_payments(*)
             `)
             .eq("clinic_id", clinicId)
             .eq("consultation_id", consultationId)
