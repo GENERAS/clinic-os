@@ -126,30 +126,30 @@ DROP POLICY IF EXISTS radiology_orders_insert ON public.radiology_orders;
 DROP POLICY IF EXISTS radiology_orders_update ON public.radiology_orders;
 DROP POLICY IF EXISTS radiology_orders_delete ON public.radiology_orders;
 
-CREATE POLICY radiology_orders_select ON public.radiology_orders FOR SELECT USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_orders_insert ON public.radiology_orders FOR INSERT WITH CHECK (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_orders_update ON public.radiology_orders FOR UPDATE USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_orders_delete ON public.radiology_orders FOR DELETE USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
+CREATE POLICY radiology_orders_select ON public.radiology_orders FOR SELECT USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_orders_insert ON public.radiology_orders FOR INSERT WITH CHECK ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_orders_update ON public.radiology_orders FOR UPDATE USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_orders_delete ON public.radiology_orders FOR DELETE USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
 
 DROP POLICY IF EXISTS radiology_images_select ON public.radiology_images;
 DROP POLICY IF EXISTS radiology_images_insert ON public.radiology_images;
 DROP POLICY IF EXISTS radiology_images_update ON public.radiology_images;
 DROP POLICY IF EXISTS radiology_images_delete ON public.radiology_images;
 
-CREATE POLICY radiology_images_select ON public.radiology_images FOR SELECT USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_images_insert ON public.radiology_images FOR INSERT WITH CHECK (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_images_update ON public.radiology_images FOR UPDATE USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_images_delete ON public.radiology_images FOR DELETE USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
+CREATE POLICY radiology_images_select ON public.radiology_images FOR SELECT USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_images_insert ON public.radiology_images FOR INSERT WITH CHECK ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_images_update ON public.radiology_images FOR UPDATE USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_images_delete ON public.radiology_images FOR DELETE USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
 
 DROP POLICY IF EXISTS radiology_reports_select ON public.radiology_reports;
 DROP POLICY IF EXISTS radiology_reports_insert ON public.radiology_reports;
 DROP POLICY IF EXISTS radiology_reports_update ON public.radiology_reports;
 DROP POLICY IF EXISTS radiology_reports_delete ON public.radiology_reports;
 
-CREATE POLICY radiology_reports_select ON public.radiology_reports FOR SELECT USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_reports_insert ON public.radiology_reports FOR INSERT WITH CHECK (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_reports_update ON public.radiology_reports FOR UPDATE USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
-CREATE POLICY radiology_reports_delete ON public.radiology_reports FOR DELETE USING (clinic_id = (auth.jwt() ->> 'clinic_id')::uuid);
+CREATE POLICY radiology_reports_select ON public.radiology_reports FOR SELECT USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_reports_insert ON public.radiology_reports FOR INSERT WITH CHECK ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_reports_update ON public.radiology_reports FOR UPDATE USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
+CREATE POLICY radiology_reports_delete ON public.radiology_reports FOR DELETE USING ((clinic_id = current_user_clinic_id()) OR current_user_is_super_admin());
 
 -- 7. STORAGE BUCKET
 INSERT INTO storage.buckets (id, name, public) VALUES ('radiology-images', 'radiology-images', false)
