@@ -101,6 +101,9 @@ export function getAppointmentService() {
         .eq("clinic_id", clinicId)
         .single();
       if (!current) throw new Error("Appointment not found");
+      if (current.status === "completed" || current.status === "cancelled") {
+        throw new Error(`Cannot edit a ${current.status} appointment`);
+      }
       const date = values.appointment_date || current.appointment_date;
       const startTime = values.start_time || current.start_time;
       const endTime = values.end_time || current.end_time;
@@ -140,6 +143,9 @@ export function getAppointmentService() {
         .eq("clinic_id", clinicId)
         .single();
       if (!current) throw new Error("Appointment not found");
+      if (!["scheduled", "confirmed"].includes(current.status)) {
+        throw new Error(`Cannot reschedule a ${current.status} appointment`);
+      }
       await checkConflict(clinicId, current.doctor_id, values.appointment_date, values.start_time, values.end_time, appointmentId);
       const { data, error } = await supabase
         .from("appointments")
@@ -192,16 +198,6 @@ export function getAppointmentService() {
           type: "warning",
         }).then().catch(() => {});
         whatsapp.queueAppointmentCancelled(appointmentId).catch(() => {});
-        supabase.from("revenue_recovery").insert({
-          clinic_id: clinicId,
-          appointment_id: appointmentId,
-          patient_id: current.patient_id,
-          lost_revenue: 12000,
-          currency: "RWF",
-          reason: "cancellation",
-          cancelled_at: new Date().toISOString(),
-          recovered: false,
-        }).then().catch(() => {});
       }
       audit.log({
         clinic_id: clinicId,

@@ -247,6 +247,61 @@ export function getPatientService() {
             }).catch(() => { });
             return data;
         },
+        async getMedicalHistory(clinicId, patientId) {
+            const [consultations, triageRecords] = await Promise.all([
+                supabase
+                    .from("consultations")
+                    .select(`
+                        id, created_at, chief_complaint, assessment, treatment_plan, status,
+                        users!consultations_doctor_id_fkey(id, full_name),
+                        diagnoses(id, description, icd_code, type, notes),
+                        prescriptions(id, medicine_name, strength, dosage, frequency, duration, route, notes),
+                        investigations(id, test_name, category, instructions)
+                    `)
+                    .eq("clinic_id", clinicId)
+                    .eq("patient_id", patientId)
+                    .order("created_at", { ascending: false }),
+                supabase
+                    .from("triage_records")
+                    .select("id, created_at, allergies, current_medications, chief_complaint, vital_signs, urgency_level")
+                    .eq("clinic_id", clinicId)
+                    .eq("patient_id", patientId)
+                    .order("created_at", { ascending: false }),
+            ]);
+
+            const consults = consultations.data || [];
+            const triage = triageRecords.data || [];
+
+            const allergies = new Set();
+            const chronicConditions = new Set();
+            const currentMedications = new Set();
+
+            triage.forEach(t => {
+                if (t.allergies && t.allergies.trim()) {
+                    t.allergies.split(",").map(a => a.trim()).filter(Boolean).forEach(a => allergies.add(a));
+                }
+                if (t.current_medications && t.current_medications.trim()) {
+                    t.current_medications.split(",").map(m => m.trim()).filter(Boolean).forEach(m => currentMedications.add(m));
+                }
+            });
+
+            consults.forEach(c => {
+                (c.diagnoses || []).forEach(d => {
+                    if (d.description) chronicConditions.add(d.description);
+                });
+                (c.prescriptions || []).forEach(p => {
+                    if (p.medicine_name) currentMedications.add(p.medicine_name);
+                });
+            });
+
+            return {
+                consultations: consults,
+                allergies: [...allergies],
+                chronicConditions: [...chronicConditions],
+                currentMedications: [...currentMedications],
+                triageRecords: triage,
+            };
+        },
         async getPatientNotes(clinicId, patientId) {
             const { data, error } = await supabase
                 .from("patient_notes")

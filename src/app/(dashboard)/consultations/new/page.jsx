@@ -57,11 +57,11 @@ export default function NewConsultationPage() {
             .finally(() => setLoading(false));
     }, [clinicId, patientId, triageId, patientService, triageService]);
 
-    const handleSave = useCallback(async (data, diagnoses, prescriptions, investigations) => {
+    const handleSave = useCallback(async (data, diagnoses, prescriptions, investigations, radiologyOrders) => {
         if (!clinicId || !user) return;
         setSaving(true);
         try {
-            const id = await consultService.createConsultation(clinicId, data, diagnoses, prescriptions, investigations, user.id);
+            const id = await consultService.createConsultation(clinicId, data, diagnoses, prescriptions, investigations, user.id, radiologyOrders);
             if (triageData?.id) {
                 await triageService.updateTriageStatus(clinicId, triageData.id, "completed", id);
             }
@@ -74,14 +74,14 @@ export default function NewConsultationPage() {
         }
     }, [clinicId, user, consultService, triageData, triageService, navigate]);
 
-    const handleComplete = useCallback(async (data, diagnoses, prescriptions, investigations) => {
+    const handleComplete = useCallback(async (data, diagnoses, prescriptions, investigations, radiologyOrders) => {
         if (!clinicId || !user) return;
         setSaving(true);
         try {
             const id = await consultService.createConsultation(
                 clinicId,
                 { ...data, status: "completed" },
-                diagnoses, prescriptions, investigations, user.id
+                diagnoses, prescriptions, investigations, user.id, radiologyOrders
             );
             if (triageData?.id) {
                 await triageService.updateTriageStatus(clinicId, triageData.id, "completed", id);

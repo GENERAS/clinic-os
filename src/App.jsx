@@ -35,6 +35,7 @@ const NewTriagePage = lazy(() => import("@/app/(dashboard)/triage/new/page"));
 const InvestigationsPage = lazy(() => import("@/app/(dashboard)/investigations/page"));
 const ConsultationBillingPage = lazy(() => import("@/app/(dashboard)/consultations/[id]/billing/page"));
 const FinancialsPage = lazy(() => import("@/app/(dashboard)/financials/page"));
+const CashierPage = lazy(() => import("@/app/(dashboard)/cashier/page"));
 const PharmacyPage = lazy(() => import("@/app/(dashboard)/pharmacy/page"));
 const ReportsPage = lazy(() => import("@/app/(dashboard)/reports/page"));
 const NotificationsPage = lazy(() => import("@/app/(dashboard)/notifications/page"));
@@ -45,8 +46,15 @@ const StaffDetailPage = lazy(() => import("@/app/(dashboard)/settings/staff/[id]
 const WhatsAppSettingsPage = lazy(() => import("@/app/(dashboard)/settings/whatsapp/page"));
 const WhatsAppPage = lazy(() => import("@/app/(dashboard)/whatsapp/page"));
 const SubscriptionPage = lazy(() => import("@/app/(dashboard)/subscription/page"));
+const InsurancePage = lazy(() => import("@/app/(dashboard)/insurance/page"));
+const CompliancePage = lazy(() => import("@/app/(dashboard)/compliance/page"));
+const ReceptionPage = lazy(() => import("@/app/(dashboard)/reception/page"));
+const SchedulingPage = lazy(() => import("@/app/(dashboard)/scheduling/page"));
+const TaxSettingsPage = lazy(() => import("@/app/(dashboard)/settings/tax/page"));
+const PrivacyPage = lazy(() => import("@/app/(dashboard)/settings/privacy/page"));
 const WhatsAppLogsPage = lazy(() => import("@/app/(dashboard)/whatsapp/logs/page"));
 const MessageDetailPage = lazy(() => import("@/app/(dashboard)/whatsapp/logs/[id]/page"));
+const ExpensesPage = lazy(() => import("@/app/(dashboard)/expenses/page"));
 const SuperAdminPage = lazy(() => import("@/app/(dashboard)/super-admin/page"));
 const SuperAdminClinics = lazy(() => import("@/app/(dashboard)/super-admin/clinics/page"));
 const SuperAdminActivity = lazy(() => import("@/app/(dashboard)/super-admin/activity/page"));
@@ -62,6 +70,17 @@ const AdminNotifications = lazy(() => import("@/app/(dashboard)/super-admin/noti
 const SuperAdminPayments = lazy(() => import("@/app/(dashboard)/super-admin/payments/page"));
 const PlatformHealthPage = lazy(() => import("@/app/(dashboard)/super-admin/health/page"));
 const ClinicDetail = lazy(() => import("@/app/(dashboard)/super-admin/clinics/[id]/page"));
+const MasterDataPage = lazy(() => import("@/app/(dashboard)/master-data/page"));
+const AdmissionsPage = lazy(() => import("@/app/(dashboard)/admissions/page"));
+const NewAdmissionPage = lazy(() => import("@/app/(dashboard)/admissions/new/page"));
+const AdmissionDetailPage = lazy(() => import("@/app/(dashboard)/admissions/[id]/page"));
+const ProceduresPage = lazy(() => import("@/app/(dashboard)/procedures/page"));
+const NewProcedurePage = lazy(() => import("@/app/(dashboard)/procedures/new/page"));
+const ReferralsPage = lazy(() => import("@/app/(dashboard)/referrals/page"));
+const NewReferralPage = lazy(() => import("@/app/(dashboard)/referrals/new/page"));
+const RadiologyPage = lazy(() => import("@/app/(dashboard)/radiology/page"));
+const NewRadiologyOrderPage = lazy(() => import("@/app/(dashboard)/radiology/new/page"));
+const RadiologyDetailPage = lazy(() => import("@/app/(dashboard)/radiology/[id]/page"));
 function Spinner() {
     return (<div className="flex min-h-screen items-center justify-center">
       <div className="border-primary size-8 animate-spin rounded-full border-2 border-t-transparent"/>
@@ -125,12 +144,15 @@ export default function App() {
                 <Route path="/consultations/new" element={<NewConsultationPage />}/>
                 <Route path="/consultations/:id" element={<ConsultationDetailPage />}/>
                 <Route path="/consultations/:id/billing" element={<ConsultationBillingPage />}/>
+                <Route path="/reception" element={<ReceptionPage />}/>
                 <Route path="/triage" element={<TriageQueuePage />}/>
                 <Route path="/triage/new" element={<NewTriagePage />}/>
                 <Route path="/investigations" element={<InvestigationsPage />}/>
                 <Route path="/pharmacy" element={<PharmacyPage />}/>
                 <Route path="/reports" element={<ReportsPage />}/>
                 <Route path="/financials" element={<FinancialsPage />}/>
+                <Route path="/expenses" element={<ExpensesPage />}/>
+                <Route path="/cashier" element={<CashierPage />}/>
                 <Route path="/appointments" element={<AppointmentsPage />}/>
                 <Route path="/appointments/new" element={<NewAppointmentPage />}/>
                 <Route path="/appointments/today" element={<TodayAppointmentsPage />}/>
@@ -145,10 +167,26 @@ export default function App() {
                 <Route path="/settings/staff" element={<StaffPage />}/>
                 <Route path="/settings/staff/:id" element={<StaffDetailPage />}/>
                 <Route path="/settings/whatsapp" element={<WhatsAppSettingsPage />}/>
+                <Route path="/settings/tax" element={<TaxSettingsPage />}/>
+                <Route path="/settings/privacy" element={<PrivacyPage />}/>
                 <Route path="/whatsapp" element={<WhatsAppPage />}/>
                 <Route path="/subscription" element={<SubscriptionPage />}/>
+                <Route path="/insurance" element={<InsurancePage />}/>
+                <Route path="/compliance" element={<CompliancePage />}/>
+                <Route path="/scheduling" element={<SchedulingPage />}/>
                 <Route path="/whatsapp/logs" element={<WhatsAppLogsPage />}/>
                 <Route path="/whatsapp/logs/:id" element={<MessageDetailPage />}/>
+                <Route path="/master-data" element={<MasterDataPage />}/>
+                <Route path="/admissions" element={<AdmissionsPage />}/>
+                <Route path="/admissions/new" element={<NewAdmissionPage />}/>
+                <Route path="/admissions/:id" element={<AdmissionDetailPage />}/>
+                <Route path="/referrals" element={<ReferralsPage />}/>
+                <Route path="/referrals/new" element={<NewReferralPage />}/>
+                <Route path="/radiology" element={<RadiologyPage />}/>
+                <Route path="/radiology/new" element={<NewRadiologyOrderPage />}/>
+                <Route path="/radiology/:id" element={<RadiologyDetailPage />}/>
+                <Route path="/procedures" element={<ProceduresPage />}/>
+                <Route path="/procedures/new" element={<NewProcedurePage />}/>
                 <Route path="/super-admin/*" element={<Navigate to="/admin" replace />}/>
               </Route>
             </Route>

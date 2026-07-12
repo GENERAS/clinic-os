@@ -37,6 +37,9 @@ yarn-error.log*
 # supabase CLI temp files
 supabase/.temp/
 
+# scripts with secrets
+scripts/
+
 # vercel
 .vercel
 

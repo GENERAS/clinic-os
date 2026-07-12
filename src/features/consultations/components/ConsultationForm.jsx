@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, X, Search, ChevronDown, Stethoscope, PillBottle, FlaskConical, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, X, Search, ChevronDown, Stethoscope, PillBottle, FlaskConical, AlertTriangle, Camera } from "lucide-react";
 import { COMMON_DIAGNOSES, COMMON_MEDICINES, COMMON_INVESTIGATIONS, COMMON_COMPLAINTS, FREQUENCY_OPTIONS, MEDICINE_FORMS, MEDICINE_ROUTES } from "@/features/consultations/services/rwanda-seed-data";
 import { getTriageService } from "@/features/triage/services/triage.service";
 import { createClient } from "@/lib/supabase/client";
@@ -363,6 +363,112 @@ function InvestigationSection({ investigations, onChange }) {
     );
 }
 
+const RADIOLOGY_MODALITIES = [
+    { value: "xray", label: "X-Ray" },
+    { value: "ultrasound", label: "Ultrasound" },
+    { value: "ct", label: "CT Scan" },
+    { value: "mri", label: "MRI" },
+    { value: "ecg", label: "ECG / EKG" },
+    { value: "echo", label: "Echocardiogram" },
+    { value: "fluoroscopy", label: "Fluoroscopy" },
+    { value: "mammography", label: "Mammography" },
+    { value: "dexa", label: "DEXA" },
+    { value: "other", label: "Other" },
+];
+
+const RADIOLOGY_BODY_PARTS = {
+    xray: ["Chest", "Abdomen", "Spine (Cervical)", "Spine (Thoracic)", "Spine (Lumbar)", "Skull", "Sinuses", "Shoulder", "Elbow", "Wrist/Hand", "Hip", "Knee", "Ankle/Foot", "Pelvis", "Rib cage", "Other"],
+    ultrasound: ["Abdomen", "Pelvis", "Obstetric", "Thyroid", "Breast", "Scrotal", "Renal", "Liver", "Gallbladder", "Other"],
+    ct: ["Head", "Neck", "Chest", "Abdomen", "Pelvis", "Spine", "Extremity", "Other"],
+    mri: ["Brain", "Spine (Cervical)", "Spine (Thoracic)", "Spine (Lumbar)", "Knee", "Shoulder", "Hip", "Abdomen", "Pelvis", "Other"],
+    ecg: ["Standard 12-lead", "Other"],
+    echo: ["Transthoracic (TTE)", "Transesophageal (TEE)", "Stress echo", "Other"],
+    fluoroscopy: ["Barium swallow", "Barium meal", "Barium enema", "Other"],
+    mammography: ["Screening", "Diagnostic", "Other"],
+    dexa: ["Lumbar spine", "Hip", "Forearm", "Other"],
+    other: ["Other"],
+};
+
+export function RadiologyOrderSection({ radiologyOrders, onChange }) {
+    const addOrder = () => {
+        onChange([...radiologyOrders, { modality: "xray", body_part: "", clinical_indication: "", urgency: "routine", special_instructions: "" }]);
+    };
+    const updateOrder = (idx, field, value) => {
+        const updated = radiologyOrders.map((o, i) => {
+            if (i !== idx) return o;
+            const next = { ...o, [field]: value };
+            if (field === "modality") { next.body_part = ""; }
+            return next;
+        });
+        onChange(updated);
+    };
+    const removeOrder = (idx) => {
+        onChange(radiologyOrders.filter((_, i) => i !== idx));
+    };
+
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                    <Camera className="size-4" />
+                    Radiology Orders
+                </h4>
+                <button type="button" onClick={addOrder} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80">
+                    <Plus className="size-3" /> Add imaging order
+                </button>
+            </div>
+            {radiologyOrders.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">No radiology orders.</p>
+            )}
+            {radiologyOrders.map((order, i) => (
+                <div key={i} className="rounded-lg border p-3 space-y-2">
+                    <div className="flex gap-2">
+                        <select
+                            value={order.modality}
+                            onChange={(e) => updateOrder(i, "modality", e.target.value)}
+                            className="rounded-lg border px-2 py-1.5 text-xs"
+                        >
+                            {RADIOLOGY_MODALITIES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                        </select>
+                        <select
+                            value={order.body_part}
+                            onChange={(e) => updateOrder(i, "body_part", e.target.value)}
+                            className="flex-1 rounded-lg border px-2 py-1.5 text-xs"
+                        >
+                            <option value="">Select body part...</option>
+                            {(RADIOLOGY_BODY_PARTS[order.modality] || []).map(bp => <option key={bp} value={bp}>{bp}</option>)}
+                        </select>
+                        <select
+                            value={order.urgency}
+                            onChange={(e) => updateOrder(i, "urgency", e.target.value)}
+                            className="rounded-lg border px-2 py-1.5 text-xs"
+                        >
+                            <option value="routine">Routine</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="stat">STAT</option>
+                        </select>
+                        <button type="button" onClick={() => removeOrder(i)} className="shrink-0 text-muted-foreground hover:text-red-500 transition-colors">
+                            <Trash2 className="size-3.5" />
+                        </button>
+                    </div>
+                    <input
+                        value={order.clinical_indication}
+                        onChange={(e) => updateOrder(i, "clinical_indication", e.target.value)}
+                        className="w-full rounded-lg border px-3 py-1.5 text-xs"
+                        placeholder="Clinical indication (required)"
+                    />
+                    <input
+                        value={order.special_instructions}
+                        onChange={(e) => updateOrder(i, "special_instructions", e.target.value)}
+                        className="w-full rounded-lg border px-3 py-1.5 text-xs"
+                        placeholder="Special instructions (optional)"
+                    />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 // Maps old vital sign keys (used before normalization) to new standardized keys
 const VITAL_LEGACY_MAP = { bp_systolic: "systolic_bp", bp_diastolic: "diastolic_bp", pulse: "heart_rate", spo2: "oxygen_saturation" };
 
@@ -499,6 +605,7 @@ export function ConsultationForm({ patient, doctorName, initialData, onSave, onC
     const [investigations, setInvestigations] = useState(initialData?.investigations?.map(i => ({
         test_name: i.test_name, category: i.category || "", instructions: i.instructions || ""
     })) || []);
+    const [radiologyOrders, setRadiologyOrders] = useState([]);
 
     const [selectedComplaints, setSelectedComplaints] = useState(
         chiefComplaint ? chiefComplaint.split(";").map(s => s.trim()).filter(Boolean) : []
@@ -538,8 +645,8 @@ export function ConsultationForm({ patient, doctorName, initialData, onSave, onC
         sick_leave_days: parseInt(sickLeaveDays) || 0,
     });
 
-    const handleSave = () => onSave(collectData(), diagnoses, prescriptions, investigations);
-    const handleComplete = () => onComplete(collectData(), diagnoses, prescriptions, investigations);
+    const handleSave = () => onSave(collectData(), diagnoses, prescriptions, investigations, radiologyOrders);
+    const handleComplete = () => onComplete(collectData(), diagnoses, prescriptions, investigations, radiologyOrders);
 
     const today = new Date().toISOString().split("T")[0];
 
@@ -614,6 +721,10 @@ export function ConsultationForm({ patient, doctorName, initialData, onSave, onC
 
             <section className="space-y-3">
                 <InvestigationSection investigations={investigations} onChange={setInvestigations} />
+            </section>
+
+            <section className="space-y-3">
+                <RadiologyOrderSection radiologyOrders={radiologyOrders} onChange={setRadiologyOrders} />
             </section>
 
             <section className="space-y-3">

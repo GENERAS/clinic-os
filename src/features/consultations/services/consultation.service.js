@@ -7,7 +7,7 @@ export class ConsultationService {
         this.supabase = supabase;
     }
 
-    async createConsultation(clinicId, data, diagnoses, prescriptions, investigations, userId) {
+    async createConsultation(clinicId, data, diagnoses, prescriptions, investigations, userId, radiologyOrders = []) {
         const { data: consultation, error: consultError } = await this.supabase
             .from("consultations")
             .insert({
@@ -85,6 +85,25 @@ export class ConsultationService {
             if (invError) throw invError;
         }
 
+        if (radiologyOrders?.length > 0) {
+            const { error: radError } = await this.supabase
+                .from("radiology_orders")
+                .insert(radiologyOrders.map(o => ({
+                    consultation_id: consultationId,
+                    clinic_id: clinicId,
+                    patient_id: data.patient_id,
+                    modality: o.modality,
+                    body_part: o.body_part,
+                    clinical_indication: o.clinical_indication,
+                    urgency: o.urgency || "routine",
+                    special_instructions: o.special_instructions || null,
+                    ordered_by: userId,
+                    created_by: userId,
+                    status: "ordered",
+                })));
+            if (radError) throw radError;
+        }
+
         return consultationId;
     }
 
@@ -107,7 +126,7 @@ export class ConsultationService {
         return data;
     }
 
-    async updateConsultation(clinicId, id, data, diagnoses, prescriptions, investigations, userId) {
+    async updateConsultation(clinicId, id, data, diagnoses, prescriptions, investigations, userId, radiologyOrders = []) {
         const { error: consultError } = await this.supabase
             .from("consultations")
             .update({
@@ -128,11 +147,27 @@ export class ConsultationService {
         if (consultError) throw consultError;
 
         if (data.status === "completed") {
-            await this.supabase
-                .from("appointments")
-                .update({ status: "completed" })
-                .eq("id", data.appointment_id)
-                .eq("clinic_id", clinicId);
+            const { data: consultationRecord } = await this.supabase
+                .from("consultations")
+                .select("appointment_id")
+                .eq("id", id)
+                .single();
+
+            if (consultationRecord?.appointment_id) {
+                const { data: apt } = await this.supabase
+                    .from("appointments")
+                    .select("status")
+                    .eq("id", consultationRecord.appointment_id)
+                    .single();
+
+                if (apt && !["completed", "cancelled"].includes(apt.status)) {
+                    await this.supabase
+                        .from("appointments")
+                        .update({ status: "completed", updated_at: new Date().toISOString() })
+                        .eq("id", consultationRecord.appointment_id)
+                        .eq("clinic_id", clinicId);
+                }
+            }
         }
 
         await this.supabase.from("diagnoses").delete().eq("consultation_id", id);
@@ -189,14 +224,33 @@ export class ConsultationService {
             if (invError) throw invError;
         }
 
+        if (radiologyOrders?.length > 0) {
+            const { error: radError } = await this.supabase
+                .from("radiology_orders")
+                .insert(radiologyOrders.map(o => ({
+                    consultation_id: id,
+                    clinic_id: clinicId,
+                    patient_id: data.patient_id,
+                    modality: o.modality,
+                    body_part: o.body_part,
+                    clinical_indication: o.clinical_indication,
+                    urgency: o.urgency || "routine",
+                    special_instructions: o.special_instructions || null,
+                    ordered_by: userId,
+                    created_by: userId,
+                    status: "ordered",
+                })));
+            if (radError) throw radError;
+        }
+
         return id;
     }
 
-    async completeConsultation(clinicId, id, data, diagnoses, prescriptions, investigations, userId) {
+    async completeConsultation(clinicId, id, data, diagnoses, prescriptions, investigations, userId, radiologyOrders = []) {
         return this.updateConsultation(
             clinicId, id,
             { ...data, status: "completed" },
-            diagnoses, prescriptions, investigations, userId
+            diagnoses, prescriptions, investigations, userId, radiologyOrders
         );
     }
 

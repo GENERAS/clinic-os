@@ -1,11 +1,12 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2, CreditCard, TrendingUp, ArrowUpRight, DollarSign, Receipt, CalendarRange, RefreshCw } from "lucide-react";
+import { Loader2, CreditCard, TrendingUp, ArrowUpRight, DollarSign, Receipt, CalendarRange, RefreshCw, TrendingDown } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getBillingService } from "@/features/billing/services/billing.service";
+import { getExpenseService } from "@/features/accounting/services/expense.service";
 import { MetricCard } from "@/features/dashboard/components/metric-card";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
@@ -13,9 +14,11 @@ import { handleApiError } from "@/lib/errors";
 export default function FinancialsPage() {
     const { clinic: authClinic } = useAuth();
     const clinicId = authClinic?.id;
-    const service = useMemo(() => getBillingService(), []);
+    const billingService = useMemo(() => getBillingService(), []);
+    const expenseService = useMemo(() => getExpenseService(), []);
     const [summary, setSummary] = useState(null);
     const [recentInvoices, setRecentInvoices] = useState([]);
+    const [expenseSummary, setExpenseSummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState("today");
 
@@ -40,15 +43,20 @@ export default function FinancialsPage() {
         setLoading(true);
         try {
             const range = getDateRange(period);
-            const [summaryData, invoicesData] = await Promise.all([
-                service.getFinancialSummary(clinicId, range.from, range.to),
-                service.getInvoices(clinicId, { dateFrom: range.from, dateTo: range.to }),
+            const dateFrom = range.from.split("T")[0];
+            const dateTo = range.to.split("T")[0];
+
+            const [summaryData, invoicesData, expSummary] = await Promise.all([
+                billingService.getFinancialSummary(clinicId, range.from, range.to),
+                billingService.getInvoices(clinicId, { dateFrom: range.from, dateTo: range.to }),
+                expenseService.getExpenseSummary(clinicId, dateFrom, dateTo).catch(() => ({ total: 0, byCategory: {}, count: 0 })),
             ]);
             setSummary(summaryData);
             setRecentInvoices(invoicesData.slice(0, 20));
+            setExpenseSummary(expSummary);
         } catch (err) { toast.error(handleApiError(err, "Failed to load financial data")); }
         finally { setLoading(false); }
-    }, [clinicId, period, service, getDateRange]);
+    }, [clinicId, period, billingService, expenseService, getDateRange]);
 
     useEffect(() => { load(); }, [load]);
 
@@ -56,9 +64,11 @@ export default function FinancialsPage() {
         return new Intl.NumberFormat("en-RW", { style: "currency", currency: "RWF", minimumFractionDigits: 0 }).format(amount);
     };
 
+    const profit = summary && expenseSummary ? summary.total_collected - expenseSummary.total : null;
+
     return (
         <div className="space-y-5">
-            <PageHeader title="Financials" description="Revenue, payments, and outstanding balances">
+            <PageHeader title="Financials" description="Revenue, expenses, and profit overview">
                 <button onClick={() => load()} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
                     <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
                 </button>
@@ -82,11 +92,16 @@ export default function FinancialsPage() {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                         <MetricCard label="Total Billed" value={formatCurrency(summary.total_billed)} icon={<Receipt className="size-[18px] text-blue-500"/>} />
                         <MetricCard label="Collected" value={formatCurrency(summary.total_collected)} icon={<CreditCard className="size-[18px] text-emerald-500"/>} />
+                        <MetricCard label="Expenses" value={formatCurrency(expenseSummary?.total || 0)} icon={<TrendingDown className="size-[18px] text-red-500"/>} />
                         <MetricCard label="Outstanding" value={formatCurrency(summary.outstanding)} icon={<TrendingUp className="size-[18px] text-amber-500"/>} />
-                        <MetricCard label="Transactions" value={summary.payment_count} icon={<ArrowUpRight className="size-[18px] text-purple-500"/>} />
+                        <MetricCard
+                            label="Profit"
+                            value={formatCurrency(profit || 0)}
+                            icon={<DollarSign className={`size-[18px] ${profit !== null && profit >= 0 ? "text-emerald-500" : "text-red-500"}`}/>}
+                        />
                     </div>
 
                     <div className="grid gap-5 lg:grid-cols-3">
@@ -136,8 +151,26 @@ export default function FinancialsPage() {
                                 )}
                             </SectionCard>
 
+                            {expenseSummary && Object.keys(expenseSummary.byCategory).length > 0 && (
+                                <SectionCard title="Expense Breakdown">
+                                    <div className="space-y-2">
+                                        {Object.entries(expenseSummary.byCategory)
+                                            .sort(([, a], [, b]) => b - a)
+                                            .map(([category, amount]) => (
+                                                <div key={category} className="flex items-center justify-between">
+                                                    <span className="text-xs font-medium capitalize">{category.replace("_", " ")}</span>
+                                                    <span className="text-xs font-semibold text-red-600">{formatCurrency(amount)}</span>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </SectionCard>
+                            )}
+
                             <SectionCard title="Quick Actions">
                                 <div className="space-y-1.5">
+                                    <Link to="/expenses" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/30 transition-colors">
+                                        <TrendingDown className="size-3.5" /> Manage Expenses
+                                    </Link>
                                     <Link to="/reports" className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/30 transition-colors">
                                         <CreditCard className="size-3.5" /> View Reports
                                     </Link>

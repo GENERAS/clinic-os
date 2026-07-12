@@ -22,10 +22,12 @@ export default function StaffDetailPage() {
     const isSelf = authUser?.id === id;
     const [member, setMember] = useState(null);
     const [auditLogs, setAuditLogs] = useState([]);
+    const [rolesList, setRolesList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(null);
     const [error, setError] = useState(null);
+    const [editForm, setEditForm] = useState({ full_name: "", phone: "" });
     const clinicId = authClinic?.id;
     const supabase = useMemo(() => createClient(), []);
     const staffService = useMemo(() => getStaffService(), []);
@@ -34,8 +36,15 @@ export default function StaffDetailPage() {
             return;
         setLoading(true);
         try {
-            const data = await staffService.getStaffById(clinicId, id);
+            const [data, allRoles] = await Promise.all([
+                staffService.getStaffById(clinicId, id),
+                staffService.getAllRoles(),
+            ]);
             setMember(data);
+            setRolesList(allRoles);
+            if (data) {
+                setEditForm({ full_name: data.full_name || "", phone: data.phone || "" });
+            }
             const { data: logs } = await supabase
                 .from("audit_logs")
                 .select("*")
@@ -141,6 +150,24 @@ export default function StaffDetailPage() {
             setSaving(false);
         }
     };
+    const handleProfileSave = async () => {
+        if (!clinicId || !authUser || !id) return;
+        setSaving(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            await staffService.updateStaff(clinicId, id, {
+                full_name: editForm.full_name,
+                phone: editForm.phone,
+            }, authUser.id);
+            setSuccess("Profile updated");
+            await loadData();
+        } catch (err) {
+            setError(handleApiError(err, "Failed to update profile"));
+        } finally {
+            setSaving(false);
+        }
+    };
     if (loading) {
         return (<div className="flex items-center justify-center py-20">
         <Loader2 className="size-8 animate-spin text-muted-foreground"/>
@@ -215,6 +242,27 @@ export default function StaffDetailPage() {
           {success}
         </div>)}
 
+      {(isOwner || isSelf) && (<div className="rounded-xl border bg-card p-6">
+          <h2 className="mb-4 font-semibold">Profile</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Full Name</label>
+              <input type="text" value={editForm.full_name} onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))} disabled={saving} className="w-full rounded-lg border bg-background px-3 py-2 text-sm"/>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Phone</label>
+              <input type="text" value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} disabled={saving} className="w-full rounded-lg border bg-background px-3 py-2 text-sm"/>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Email</label>
+              <input type="email" value={member.email} disabled className="w-full rounded-lg border bg-muted px-3 py-2 text-sm text-muted-foreground"/>
+            </div>
+          </div>
+          <button type="button" onClick={handleProfileSave} disabled={saving} className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            Save Changes
+          </button>
+        </div>)}
+
       {isOwner && !isSelf && (<div className="rounded-xl border bg-card p-6">
           <h2 className="mb-4 font-semibold">Manage Staff</h2>
           <div className="flex flex-wrap gap-4">
@@ -222,7 +270,7 @@ export default function StaffDetailPage() {
               <label className="mb-1.5 block text-sm font-medium">Role</label>
               <select value={member.roles[0]?.id || ""} onChange={(e) => handleRoleChange(e.target.value)} disabled={saving} className="rounded-lg border bg-background px-3 py-2 text-sm">
                 <option value="">Change role...</option>
-                <option value="owner">Owner</option>
+                {rolesList.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
               </select>
             </div>
 

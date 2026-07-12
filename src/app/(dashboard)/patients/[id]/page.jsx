@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, User, MessageSquare, Calendar, Edit, DollarSign, Stethoscope } from "lucide-react";
+import { ArrowLeft, Loader2, User, MessageSquare, Calendar, Edit, DollarSign, Stethoscope, AlertTriangle, Pill, Activity, FileText } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -14,6 +14,7 @@ import { PatientAppointmentsList } from "@/features/patients/components/patient-
 import { VisitHistoryList } from "@/features/patients/components/VisitHistoryList";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+
 export default function PatientDetailPage() {
     const { id } = useParams();
     const { user, clinic: authClinic } = useAuth();
@@ -23,9 +24,13 @@ export default function PatientDetailPage() {
     const [notes, setNotes] = useState([]);
     const [visits, setVisits] = useState([]);
     const [invoices, setInvoices] = useState([]);
+    const [medHistory, setMedHistory] = useState(null);
+    const [medHistoryLoading, setMedHistoryLoading] = useState(false);
+    const [showMedHistory, setShowMedHistory] = useState(false);
     const service = useMemo(() => getPatientService(), []);
     const billing = useMemo(() => getBillingService(), []);
     const consultService = useMemo(() => getConsultationService(), []);
+
     const loadPatient = useCallback(async () => {
         if (!clinicId)
             return;
@@ -49,9 +54,28 @@ export default function PatientDetailPage() {
             setLoading(false);
         }
     }, [clinicId, id, service, billing]);
+
+    const loadMedicalHistory = useCallback(async () => {
+        if (!clinicId || !id) return;
+        setMedHistoryLoading(true);
+        try {
+            const data = await service.getMedicalHistory(clinicId, id);
+            setMedHistory(data);
+        } catch (err) {
+            toast.error(handleApiError(err, "Failed to load medical history"));
+        } finally {
+            setMedHistoryLoading(false);
+        }
+    }, [clinicId, id, service]);
+
     useEffect(() => {
         loadPatient();
     }, [loadPatient]);
+
+    useEffect(() => {
+        if (showMedHistory && !medHistory) loadMedicalHistory();
+    }, [showMedHistory, medHistory, loadMedicalHistory]);
+
     const handleAddNote = async (content) => {
         if (!clinicId || !user)
             return;
@@ -65,6 +89,7 @@ export default function PatientDetailPage() {
             toast.error("Failed to add note");
         }
     };
+
     if (loading) {
         return (<div className="flex justify-center py-12">
         <Loader2 className="size-8 animate-spin text-muted-foreground"/>
@@ -104,7 +129,6 @@ export default function PatientDetailPage() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Emergency Contact */}
         {patient.emergency_contact_name && (<SectionCard title="Emergency Contact" icon={<User className="size-4"/>}>
             <div className="space-y-1">
               <p className="text-sm font-medium">{patient.emergency_contact_name}</p>
@@ -112,7 +136,6 @@ export default function PatientDetailPage() {
             </div>
           </SectionCard>)}
 
-        {/* Created Info */}
         <SectionCard title="Record Info">
           <p className="text-xs text-muted-foreground">
             Created {new Date(patient.created_at).toLocaleString()}
@@ -123,22 +146,148 @@ export default function PatientDetailPage() {
         </SectionCard>
       </div>
 
-      {/* Patient Notes */}
       {patient.notes && (<SectionCard title="General Notes" icon={<Edit className="size-4"/>}>
           <p className="text-sm">{patient.notes}</p>
         </SectionCard>)}
 
-      {/* Appointment History */}
+      {/* Medical History Toggle */}
+      <SectionCard
+        title="Medical History"
+        icon={<Activity className="size-4"/>}
+        actions={
+          <button onClick={() => { setShowMedHistory(!showMedHistory); }}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium text-primary hover:bg-primary/5 transition-colors">
+            {showMedHistory ? "Hide" : "View Full History"}
+          </button>
+        }
+      >
+        {showMedHistory ? (
+          medHistoryLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="size-6 animate-spin text-muted-foreground"/></div>
+          ) : medHistory ? (
+            <div className="space-y-4">
+              {/* Allergies */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <AlertTriangle className="size-3.5 text-amber-500" />
+                  <h4 className="text-xs font-semibold">Allergies</h4>
+                </div>
+                {medHistory.allergies.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No known allergies</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {medHistory.allergies.map((a, i) => (
+                      <span key={i} className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-medium text-red-700">
+                        {a}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Chronic Conditions */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <FileText className="size-3.5 text-blue-500" />
+                  <h4 className="text-xs font-semibold">Chronic Conditions</h4>
+                </div>
+                {medHistory.chronicConditions.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No recorded conditions</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {medHistory.chronicConditions.map((c, i) => (
+                      <span key={i} className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-medium text-blue-700">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Current Medications */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Pill className="size-3.5 text-emerald-500" />
+                  <h4 className="text-xs font-semibold">Current Medications</h4>
+                </div>
+                {medHistory.currentMedications.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No active medications</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {medHistory.currentMedications.map((m, i) => (
+                      <span key={i} className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Past Visits Timeline */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Stethoscope className="size-3.5 text-purple-500" />
+                  <h4 className="text-xs font-semibold">Past Visits</h4>
+                </div>
+                {medHistory.consultations.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No consultations recorded</p>
+                ) : (
+                  <div className="space-y-2">
+                    {medHistory.consultations.map(c => {
+                      const visitDate = new Date(c.created_at);
+                      const primaryDiags = (c.diagnoses || []).filter(d => d.type === "primary").map(d => d.description);
+                      const meds = (c.prescriptions || []).map(p => p.medicine_name);
+                      return (
+                        <Link key={c.id} to={`/consultations/${c.id}`}
+                          className="block rounded-lg border p-3 hover:bg-muted/30 transition-colors">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Calendar className="size-3" />
+                              {visitDate.toLocaleDateString("en-RW", { year: "numeric", month: "short", day: "numeric" })}
+                            </div>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                              c.status === "completed" ? "bg-emerald-50 text-emerald-700" :
+                              c.status === "in_progress" ? "bg-amber-50 text-amber-700" :
+                              "bg-red-50 text-red-700"
+                            }`}>{c.status}</span>
+                          </div>
+                          <p className="mt-1 text-xs font-medium">{c.chief_complaint || "No complaint recorded"}</p>
+                          {c.assessment && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{c.assessment}</p>}
+                          {primaryDiags.length > 0 && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              <span className="font-medium">Dx:</span> {primaryDiags.join(", ")}
+                            </p>
+                          )}
+                          {meds.length > 0 && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              <span className="font-medium">Rx:</span> {meds.slice(0, 3).join(", ")}{meds.length > 3 ? ` +${meds.length - 3} more` : ""}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
+                            <User className="size-2.5" />
+                            {c.users?.full_name || "Unknown doctor"}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null
+        ) : (
+          <p className="text-xs text-muted-foreground">Click "View Full History" to see allergies, conditions, medications, and past visits.</p>
+        )}
+      </SectionCard>
+
       <SectionCard title="Appointment History" icon={<Calendar className="size-4"/>}>
         {clinicId && <PatientAppointmentsList clinicId={clinicId} patientId={id}/>}
       </SectionCard>
 
-      {/* Visit History */}
       <SectionCard title="Visit History" icon={<Stethoscope className="size-4"/>}>
         {clinicId && <VisitHistoryList clinicId={clinicId} patientId={id} service={consultService} />}
       </SectionCard>
 
-      {/* Billing History */}
       <SectionCard title="Billing History" icon={<DollarSign className="size-4"/>}>
         {invoices.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
@@ -171,7 +320,6 @@ export default function PatientDetailPage() {
         )}
       </SectionCard>
 
-      {/* Internal Notes */}
       <SectionCard title="Internal Notes" icon={<MessageSquare className="size-4"/>}>
         {clinicId && (<PatientNotes notes={notes} onAddNote={handleAddNote}/>)}
       </SectionCard>

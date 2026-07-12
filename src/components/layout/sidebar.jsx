@@ -3,8 +3,10 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/utils/cn";
 import {
   LayoutDashboard, Users, CalendarClock, Clock, Package, MessageCircle,
-  Bell, User, Settings, X, Hospital, LogOut, Calendar, UserCog,
-  Shield, CreditCard, Stethoscope, Heart, Beaker, DollarSign, Pill, TrendingUp
+  Bell, User, Settings, Hospital, LogOut, Calendar, UserCog,
+  Shield, CreditCard, Stethoscope, Heart, Beaker, DollarSign, Pill, TrendingUp,
+  FileCheck, Receipt, ClipboardCheck, CalendarRange, Lock, Database,
+  BedDouble, ArrowRightLeft, Scissors, ClipboardList, Banknote, Camera
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 
@@ -66,18 +68,32 @@ export function Sidebar({ isOpen, onClose }) {
         </NavSection>
 
         <NavSection label="Operations">
+          <NavItem item={{ href: "/reception", label: "Reception", icon: ClipboardList }} onClose={onClose} />
           <NavItem item={{ href: "/appointments/today", label: "Today", icon: Clock }} onClose={onClose} />
           <NavItem item={{ href: "/appointments", label: "Appointments", icon: CalendarClock }} onClose={onClose} />
           <NavItem item={{ href: "/appointments/calendar", label: "Calendar", icon: Calendar }} onClose={onClose} />
           <NavItem item={{ href: "/patients", label: "Patients", icon: Users }} onClose={onClose} />
           <NavItem item={{ href: "/inventory", label: "Inventory", icon: Package }} onClose={onClose} />
+          <NavItem item={{ href: "/scheduling", label: "Scheduling & Queue", icon: CalendarRange }} onClose={onClose} />
         </NavSection>
 
         <NavSection label="Clinical">
           <NavItem item={{ href: "/triage", label: "Triage", icon: Heart }} onClose={onClose} />
           <NavItem item={{ href: "/consultations/new", label: "New Consultation", icon: Stethoscope }} onClose={onClose} />
           <NavItem item={{ href: "/investigations", label: "Lab Results", icon: Beaker }} onClose={onClose} />
+          <NavItem item={{ href: "/radiology", label: "Radiology", icon: Camera }} onClose={onClose} />
           <NavItem item={{ href: "/pharmacy", label: "Pharmacy", icon: Pill }} onClose={onClose} />
+          <NavItem item={{ href: "/admissions", label: "Admissions (IPD)", icon: BedDouble }} onClose={onClose} />
+          <NavItem item={{ href: "/referrals", label: "Referrals", icon: ArrowRightLeft }} onClose={onClose} />
+          <NavItem item={{ href: "/procedures", label: "Procedures", icon: Scissors }} onClose={onClose} />
+        </NavSection>
+
+        <NavSection label="Billing & Insurance">
+          <NavItem item={{ href: "/cashier", label: "Cashier", icon: Banknote }} onClose={onClose} />
+          <NavItem item={{ href: "/financials", label: "Financials", icon: DollarSign }} onClose={onClose} />
+          <NavItem item={{ href: "/expenses", label: "Expenses", icon: DollarSign }} onClose={onClose} />
+          <NavItem item={{ href: "/insurance", label: "Insurance & Claims", icon: FileCheck }} onClose={onClose} />
+          <NavItem item={{ href: "/reports", label: "Reports", icon: TrendingUp }} onClose={onClose} />
         </NavSection>
 
         <NavSection label="Communication">
@@ -85,15 +101,17 @@ export function Sidebar({ isOpen, onClose }) {
           <NavItem item={{ href: "/whatsapp", label: "WhatsApp", icon: MessageCircle }} onClose={onClose} />
         </NavSection>
 
-        <NavSection label="Management">
-          <NavItem item={{ href: "/reports", label: "Reports", icon: TrendingUp }} onClose={onClose} />
-          <NavItem item={{ href: "/financials", label: "Financials", icon: DollarSign }} onClose={onClose} />
+        <NavSection label="Compliance & Quality">
+          <NavItem item={{ href: "/compliance", label: "MoH Compliance", icon: ClipboardCheck }} onClose={onClose} />
           <NavItem item={{ href: "/subscription", label: "Subscription", icon: CreditCard }} onClose={onClose} />
         </NavSection>
 
         <NavSection label="Settings">
           <NavItem item={{ href: "/settings", label: "Clinic Settings", icon: Settings }} onClose={onClose} />
           <NavItem item={{ href: "/settings/staff", label: "Staff", icon: UserCog }} onClose={onClose} />
+          <NavItem item={{ href: "/settings/tax", label: "Tax & EBM", icon: Receipt }} onClose={onClose} />
+          <NavItem item={{ href: "/settings/privacy", label: "Privacy & Audit", icon: Lock }} onClose={onClose} />
+          <NavItem item={{ href: "/master-data", label: "Master Data", icon: Database }} onClose={onClose} />
           <NavItem item={{ href: "/profile", label: "Profile", icon: User }} onClose={onClose} />
         </NavSection>
       </nav>

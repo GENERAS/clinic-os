@@ -53,7 +53,8 @@ export class InvestigationService {
                 result_entered_at: new Date().toISOString(),
                 result_entered_by: userId,
             })
-            .eq("id", investigationId);
+            .eq("id", investigationId)
+            .eq("clinic_id", clinicId);
 
         if (error) throw error;
     }

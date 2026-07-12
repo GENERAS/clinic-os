@@ -109,12 +109,6 @@ export class PharmacyService {
     }
 
     async dispense(clinicId, data, userId) {
-        const { error: rxError } = await this.supabase
-            .from("prescriptions")
-            .select("quantity, quantity_dispensed, dispensed_status")
-            .eq("id", data.prescription_id)
-            .single();
-
         const { data: prescription } = await this.supabase
             .from("prescriptions")
             .select("quantity, quantity_dispensed, dispensed_status, consultation_id, patient_id")
@@ -122,6 +116,27 @@ export class PharmacyService {
             .single();
 
         if (!prescription) throw new Error("Prescription not found");
+
+        if (data.batch_id) {
+            const { data: batch } = await this.supabase
+                .from("inventory_batches")
+                .select("quantity")
+                .eq("id", data.batch_id)
+                .single();
+            if (!batch || batch.quantity < data.quantity_dispensed) {
+                throw new Error(`Insufficient batch stock. Available: ${batch ? batch.quantity : 0}`);
+            }
+        }
+
+        const { data: item } = await this.supabase
+            .from("inventory_items")
+            .select("current_stock")
+            .eq("id", data.inventory_item_id)
+            .single();
+
+        if (!item || item.current_stock < data.quantity_dispensed) {
+            throw new Error(`Insufficient item stock. Available: ${item ? item.current_stock : 0}`);
+        }
 
         const newDispensed = (prescription.quantity_dispensed || 0) + data.quantity_dispensed;
         const totalQty = prescription.quantity || 1;
@@ -165,12 +180,6 @@ export class PharmacyService {
                     .eq("id", data.batch_id);
             }
         }
-
-        const { data: item } = await this.supabase
-            .from("inventory_items")
-            .select("current_stock")
-            .eq("id", data.inventory_item_id)
-            .single();
 
         if (item) {
             const newStock = Math.max(0, item.current_stock - data.quantity_dispensed);
@@ -228,8 +237,8 @@ export class PharmacyService {
         ] = await Promise.all([
             this.supabase
                 .from("prescriptions")
-                .select("*", { count: "exact", head: true })
-                .eq("clinic_id", clinicId)
+                .select("*, consultations!inner(clinic_id)", { count: "exact", head: true })
+                .eq("consultations.clinic_id", clinicId)
                 .in("dispensed_status", ["pending", "partial"]),
             this.supabase
                 .from("dispensations")

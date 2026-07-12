@@ -49,10 +49,9 @@ export function getStaffService() {
             });
 
             return (users || [])
-                .filter(u => rolesByUser.has(u.id))
                 .map(u => ({
                     ...u,
-                    roles: rolesByUser.get(u.id),
+                    roles: rolesByUser.get(u.id) || [],
                     permissions: [],
                 }));
         },
@@ -290,6 +289,14 @@ export function getStaffService() {
             return avatarUrl;
         },
         async deleteAvatar(clinicId, staffId, userId) {
+            const { data: userData } = await supabase.from("users").select("avatar_url").eq("id", staffId).single();
+            if (userData?.avatar_url) {
+                try {
+                    const url = new URL(userData.avatar_url);
+                    const path = url.pathname.split("/").slice(-2).join("/");
+                    await supabase.storage.from("avatars").remove([path]);
+                } catch {}
+            }
             await this.updateStaff(clinicId, staffId, { avatar_url: null }, userId);
         },
     };
