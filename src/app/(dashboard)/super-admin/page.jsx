@@ -36,7 +36,8 @@ export default function SuperAdminDashboard() {
     async function fetchAll() {
       try {
         const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        const todayStart = fmt(now);
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();

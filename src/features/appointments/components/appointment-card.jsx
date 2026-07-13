@@ -14,7 +14,7 @@ export function AppointmentCard({ appointment: apt }) {
       <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <User className="size-3.5 shrink-0"/>
-          <span className="truncate">{apt.doctor.full_name}</span>
+          <span className="truncate">{apt.doctor?.full_name || "Unassigned"}</span>
         </div>
         <div className="flex items-center gap-2">
           <Calendar className="size-3.5 shrink-0"/>

@@ -158,6 +158,19 @@ export default function RadiologyDetailPage() {
         setLoading(true);
         try {
             const data = await service.getOrder(clinicId, id);
+            if (data?.radiology_images?.length > 0) {
+                const resolved = await Promise.all(
+                    data.radiology_images.map(async (img) => {
+                        if (img.storage_path && img.file_url?.includes("/object/sign/")) return img;
+                        if (img.storage_path) {
+                            const url = await service.getSignedUrl(img.storage_path);
+                            return url ? { ...img, file_url: url } : img;
+                        }
+                        return img;
+                    })
+                );
+                data.radiology_images = resolved;
+            }
             setOrder(data);
         } catch {
             toast.error("Failed to load radiology order");
@@ -215,7 +228,7 @@ export default function RadiologyDetailPage() {
     }, [clinicId, order, user, service, load]);
 
     const latestReport = order?.radiology_reports?.length > 0
-        ? order.radiology_reports.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+        ? [...order.radiology_reports].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
         : null;
 
     if (loading) {
@@ -332,7 +345,7 @@ export default function RadiologyDetailPage() {
                     {order.radiology_images?.length > 0 ? (
                         <div className="grid gap-4 sm:grid-cols-2">
                             {order.radiology_images.map((img) => (
-                                <ImageViewer key={img.id} image={img} onDelete={handleDeleteImage} isOwner={true} />
+                                <ImageViewer key={img.id} image={img} onDelete={handleDeleteImage} isOwner={order.ordered_by === user?.id || order.assigned_radiologist_id === user?.id} />
                             ))}
                         </div>
                     ) : (

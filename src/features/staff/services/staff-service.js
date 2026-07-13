@@ -197,6 +197,38 @@ export function getStaffService() {
                 .select("id, role_id")
                 .eq("user_id", staffId)
                 .maybeSingle();
+
+            if (existing && existing.role_id !== roleId) {
+                const { data: currentRole } = await supabase
+                    .from("roles")
+                    .select("name")
+                    .eq("id", existing.role_id)
+                    .maybeSingle();
+
+                const { data: newRole } = await supabase
+                    .from("roles")
+                    .select("name")
+                    .eq("id", roleId)
+                    .maybeSingle();
+
+                if (currentRole?.name === "Owner" && newRole?.name !== "Owner") {
+                    const { data: ownerRoles } = await supabase
+                        .from("roles")
+                        .select("id")
+                        .eq("name", "Owner");
+
+                    const ownerRoleIds = (ownerRoles || []).map(r => r.id);
+                    const { count } = await supabase
+                        .from("user_roles")
+                        .select("*", { count: "exact", head: true })
+                        .in("role_id", ownerRoleIds);
+
+                    if ((count || 0) <= 1) {
+                        throw new Error("Cannot demote the only Owner. Promote another user to Owner first.");
+                    }
+                }
+            }
+
             if (existing) {
                 const { error } = await supabase
                     .from("user_roles")

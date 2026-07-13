@@ -23,19 +23,20 @@ export default function FinancialsPage() {
     const [period, setPeriod] = useState("today");
 
     const getDateRange = useCallback((p) => {
+        const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        if (p === "today") return { from: start.toISOString(), to: now.toISOString() };
+        const today = fmt(now);
+        if (p === "today") return { from: today, to: today };
         if (p === "week") {
-            const weekStart = new Date(start);
+            const weekStart = new Date(now);
             weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-            return { from: weekStart.toISOString(), to: now.toISOString() };
+            return { from: fmt(weekStart), to: today };
         }
         if (p === "month") {
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            return { from: monthStart.toISOString(), to: now.toISOString() };
+            return { from: fmt(monthStart), to: today };
         }
-        return { from: start.toISOString(), to: now.toISOString() };
+        return { from: today, to: today };
     }, []);
 
     const load = useCallback(async () => {
@@ -43,13 +44,11 @@ export default function FinancialsPage() {
         setLoading(true);
         try {
             const range = getDateRange(period);
-            const dateFrom = range.from.split("T")[0];
-            const dateTo = range.to.split("T")[0];
 
             const [summaryData, invoicesData, expSummary] = await Promise.all([
-                billingService.getFinancialSummary(clinicId, range.from, range.to),
-                billingService.getInvoices(clinicId, { dateFrom: range.from, dateTo: range.to }),
-                expenseService.getExpenseSummary(clinicId, dateFrom, dateTo).catch(() => ({ total: 0, byCategory: {}, count: 0 })),
+                billingService.getFinancialSummary(clinicId, range.from, range.to + "T23:59:59"),
+                billingService.getInvoices(clinicId, { dateFrom: range.from, dateTo: range.to + "T23:59:59" }),
+                expenseService.getExpenseSummary(clinicId, range.from, range.to + "T23:59:59").catch(() => ({ total: 0, byCategory: {}, count: 0 })),
             ]);
             setSummary(summaryData);
             setRecentInvoices(invoicesData.slice(0, 20));

@@ -133,6 +133,15 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
     }, [items, subtotal, taxBreakdown, notes, patientId, consultationId, clinicId, userId, service, load]);
 
     const handlePayment = useCallback(async (invoiceId) => {
+        const inv = invoices.find(i => i.id === invoiceId);
+        if (inv) {
+            const paid = (inv.patient_payments || []).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+            const outstanding = inv.total - paid;
+            if ((showPayment?.amount || 0) > outstanding + 0.01) {
+                toast.error(`Payment (${formatCurrency(showPayment.amount)}) exceeds outstanding balance (${formatCurrency(outstanding)})`);
+                return;
+            }
+        }
         setSaving(true);
         try {
             const paymentData = {
@@ -150,7 +159,7 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
         } catch (err) {
             toast.error(handleApiError(err, "Failed to record payment"));
         } finally { setSaving(false); }
-    }, [clinicId, patientId, userId, service, showPayment, load]);
+    }, [clinicId, patientId, userId, service, showPayment, load, invoices]);
 
     const handleInsuranceClaim = useCallback(async (invoiceId) => {
         setSaving(true);
@@ -284,7 +293,11 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
                             </div>
 
                             <div className="flex items-center gap-1.5 flex-wrap">
-                                <button onClick={() => setShowPayment(showPayment?.id === inv.id ? null : { id: inv.id, amount: inv.total, method: "cash", reference: "" })}
+                                <button onClick={() => {
+                                        const paid = (inv.patient_payments || []).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+                                        const outstanding = Math.max(0, inv.total - paid);
+                                        setShowPayment(showPayment?.id === inv.id ? null : { id: inv.id, amount: outstanding, method: "cash", reference: "" });
+                                    }}
                                     className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium text-emerald-600 border-emerald-200 hover:bg-emerald-50 transition-colors">
                                     <CreditCard className="size-3" /> Record Payment
                                 </button>

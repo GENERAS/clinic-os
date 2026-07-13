@@ -116,8 +116,8 @@ function DiagnosisSection({ diagnoses, onChange }) {
                             value={diag.description}
                             onChange={(val) => {
                                 const match = COMMON_DIAGNOSES.find(d => d.description === val);
-                                updateDiag(i, "description", val);
-                                if (match) updateDiag(i, "icd_code", match.icd_code);
+                                const updated = diagnoses.map((d, j) => j === i ? { ...d, description: val, icd_code: match?.icd_code || d.icd_code } : d);
+                                onChange(updated);
                             }}
                             placeholder="Search diagnosis..."
                         />
@@ -180,9 +180,16 @@ function PrescriptionSection({ prescriptions, onChange, patientAllergies }) {
     };
 
     const handleMedicineSelect = (idx, val, opt) => {
-        updateRx(idx, "medicine_name", val);
-        if (opt?.strength) updateRx(idx, "strength", opt.strength);
-        if (opt?.form) updateRx(idx, "form", opt.form);
+        const updated = prescriptions.map((p, i) => {
+            if (i !== idx) return p;
+            return {
+                ...p,
+                medicine_name: val,
+                strength: opt?.strength || p.strength,
+                form: opt?.form || p.form,
+            };
+        });
+        onChange(updated);
         const match = checkAllergyMatch(val);
         setWarnings(prev => ({ ...prev, [idx]: match }));
     };

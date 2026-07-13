@@ -39,7 +39,7 @@ export default function NewReferralPage() {
         if (!clinicId || !q || q.trim().length < 2) { setSearchResults([]); return; }
         setLoading(true);
         try {
-            const results = await patientService().searchPatients(clinicId, q);
+            const results = await patientService.searchPatients(clinicId, q);
             setSearchResults(results);
         } catch {
             setSearchResults([]);
@@ -62,7 +62,7 @@ export default function NewReferralPage() {
         if (!form.reason) { toast.error("Reason for referral is required"); return; }
         setSaving(true);
         try {
-            const id = await service().createReferral(clinicId, {
+            const id = await service.createReferral(clinicId, {
                 patient_id: selectedPatient.id,
                 referral_type: form.referral_type,
                 to_provider: form.to_provider,

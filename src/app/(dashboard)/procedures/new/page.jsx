@@ -86,7 +86,7 @@ export default function NewProcedurePage() {
                     name: c.inventory_items?.name,
                     current_stock: c.inventory_items?.current_stock,
                     unit: c.inventory_items?.unit,
-                    quantity: c.default_quantity || 1,
+                    quantity: c.quantity_required || 1,
                 })));
                 toast.success(`Loaded ${data.length} consumable${data.length !== 1 ? "s" : ""} for "${name}"`);
             }

@@ -86,10 +86,32 @@ export class RadiologyService {
     }
 
     async transitionStatus(clinicId, orderId, newStatus, userId) {
+        const VALID_TRANSITIONS = {
+            ordered: ["scheduled", "cancelled"],
+            scheduled: ["imaging_done", "cancelled"],
+            imaging_done: ["report_written", "cancelled"],
+            report_written: ["completed", "cancelled"],
+            completed: [],
+            cancelled: [],
+        };
+
+        const { data: current } = await this.supabase
+            .from("radiology_orders")
+            .select("status")
+            .eq("id", orderId)
+            .eq("clinic_id", clinicId)
+            .single();
+
+        if (current && !VALID_TRANSITIONS[current.status]?.includes(newStatus)) {
+            throw new Error(`Cannot transition from "${current.status}" to "${newStatus}"`);
+        }
+
         const updates = { status: newStatus };
         if (newStatus === "imaging_done") updates.performed_at = new Date().toISOString();
         if (newStatus === "completed") updates.completed_at = new Date().toISOString();
-        if (newStatus === "scheduled") updates.assigned_radiologist_id = userId;
+        if (newStatus === "scheduled" && !updates.assigned_radiologist_id) {
+            updates.assigned_radiologist_id = userId;
+        }
 
         await this.updateOrder(clinicId, orderId, updates);
     }
@@ -104,16 +126,18 @@ export class RadiologyService {
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = this.supabase.storage
+        const { data: urlData, error: signError } = await this.supabase.storage
             .from("radiology-images")
-            .getPublicUrl(path);
+            .createSignedUrl(path, 3600);
+
+        if (signError) throw signError;
 
         const { data, error } = await this.supabase
             .from("radiology_images")
             .insert({
                 order_id: orderId,
                 clinic_id: clinicId,
-                file_url: urlData.publicUrl,
+                file_url: urlData.signedUrl,
                 file_name: file.name,
                 file_size: file.size,
                 mime_type: file.type,
@@ -125,6 +149,15 @@ export class RadiologyService {
 
         if (error) throw error;
         return data;
+    }
+
+    async getSignedUrl(storagePath) {
+        if (!storagePath) return null;
+        const { data, error } = await this.supabase.storage
+            .from("radiology-images")
+            .createSignedUrl(storagePath, 3600);
+        if (error) return null;
+        return data.signedUrl;
     }
 
     async deleteImage(clinicId, imageId, storagePath) {

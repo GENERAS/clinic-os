@@ -34,7 +34,7 @@ export function AppointmentTable({ appointments, clinicId, userId, onStatusChang
                   </div>
                 </Link>
               </td>
-              <td className="px-4 py-3 text-sm">{apt.doctor.full_name}</td>
+              <td className="px-4 py-3 text-sm">{apt.doctor?.full_name || "Unassigned"}</td>
               <td className="hidden px-4 py-3 md:table-cell">
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1.5 text-xs">

@@ -224,6 +224,7 @@ export class ConsultationService {
             if (invError) throw invError;
         }
 
+        await this.supabase.from("radiology_orders").delete().eq("consultation_id", id);
         if (radiologyOrders?.length > 0) {
             const { error: radError } = await this.supabase
                 .from("radiology_orders")

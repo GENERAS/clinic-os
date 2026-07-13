@@ -152,10 +152,10 @@ export default function AppointmentDetailPage() {
         <SectionCard title="Doctor" icon={<Stethoscope className="size-4"/>}>
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-full bg-muted text-sm font-medium">
-              {appointment.doctor.full_name.charAt(0).toUpperCase()}
+              {appointment.doctor?.full_name?.charAt(0)?.toUpperCase() || "?"}
             </div>
             <div>
-              <p className="text-sm font-medium">{appointment.doctor.full_name}</p>
+              <p className="text-sm font-medium">{appointment.doctor?.full_name || "Unassigned"}</p>
               <p className="text-xs text-muted-foreground">Assigned Doctor</p>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function AppointmentDetailPage() {
 
         {/* Created By */}
         <SectionCard title="Created By" icon={<User className="size-4"/>}>
-          <p className="text-sm font-medium">{appointment.creator.full_name}</p>
+          <p className="text-sm font-medium">{appointment.creator?.full_name || "System"}</p>
           <p className="text-xs text-muted-foreground">
             {new Date(appointment.created_at).toLocaleString()}
           </p>

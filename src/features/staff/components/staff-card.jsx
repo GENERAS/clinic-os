@@ -7,13 +7,13 @@ export function StaffCard({ member }) {
     return (<Link to={`/settings/staff/${member.id}`} className="block rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-accent/50">
       <div className="flex items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
-          {member.avatar_url ? (<img src={member.avatar_url} alt="" className="size-10 rounded-full object-cover"/>) : (member.full_name.charAt(0).toUpperCase())}
+          {member.avatar_url ? (<img src={member.avatar_url} alt="" className="size-10 rounded-full object-cover"/>) : ((member.full_name || "?").charAt(0).toUpperCase())}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="font-medium">{member.full_name}</p>
+              <p className="font-medium">{member.full_name || "Unknown"}</p>
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {member.roles.map((role) => (<RoleBadge key={role.id} role={role.name}/>))}
               </div>

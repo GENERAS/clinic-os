@@ -34,6 +34,7 @@ export class BillingService {
             .from("billing_invoices")
             .select(`
                 *,
+                patients(id, full_name, phone),
                 billing_line_items(*),
                 patient_payments(*)
             `)
@@ -346,9 +347,9 @@ export class BillingService {
     }
 
     async getDailyPayments(clinicId) {
-        const today = new Date();
-        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
+        const now = new Date();
+        const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const today = fmt(now);
 
         const { data: payments, error } = await this.supabase
             .from("patient_payments")
@@ -358,8 +359,8 @@ export class BillingService {
                 billing_invoices(invoice_number)
             `)
             .eq("clinic_id", clinicId)
-            .gte("payment_date", startOfDay)
-            .lte("payment_date", endOfDay)
+            .gte("payment_date", today)
+            .lte("payment_date", today + "T23:59:59")
             .order("payment_date", { ascending: false });
         if (error) throw error;
 

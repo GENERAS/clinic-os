@@ -189,7 +189,7 @@ function DayView({ currentDate, appointments, navigate, headerLabel, goToday, on
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{apt.patient_name}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {apt.doctor.full_name}
+                    {apt.doctor?.full_name || "Unassigned"}
                     {apt.reason && ` — ${apt.reason}`}
                   </p>
                 </div>

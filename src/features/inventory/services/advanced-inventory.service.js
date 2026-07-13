@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/client";
-import { getAuditService } from "@/services/database/audit.service";
 
 let cachedService = null;
 
@@ -29,7 +28,7 @@ export class AdvancedInventoryService {
 
   async getSuppliers(clinicId) {
     const { data, error } = await this.supabase
-      .from("inventory_suppliers")
+      .from("suppliers")
       .select("*")
       .eq("clinic_id", clinicId)
       .order("name", { ascending: true });
@@ -39,7 +38,7 @@ export class AdvancedInventoryService {
 
   async createSupplier(clinicId, data) {
     const { data: supplier, error } = await this.supabase
-      .from("inventory_suppliers")
+      .from("suppliers")
       .insert({ clinic_id: clinicId, ...data })
       .select()
       .single();
@@ -49,8 +48,8 @@ export class AdvancedInventoryService {
 
   async updateSupplier(clinicId, supplierId, data) {
     const { data: supplier, error } = await this.supabase
-      .from("inventory_suppliers")
-      .update({ ...data, updated_at: new Date().toISOString() })
+      .from("suppliers")
+      .update(data)
       .eq("id", supplierId)
       .eq("clinic_id", clinicId)
       .select()
@@ -61,7 +60,7 @@ export class AdvancedInventoryService {
 
   async getSupplierItems(supplierId) {
     const { data, error } = await this.supabase
-      .from("inventory_supplier_items")
+      .from("supplier_items")
       .select(`
         *,
         inventory_items(id, name, unit, current_stock)
@@ -73,14 +72,12 @@ export class AdvancedInventoryService {
 
   async linkSupplierItem(supplierId, inventoryItemId, data) {
     const { data: link, error } = await this.supabase
-      .from("inventory_supplier_items")
+      .from("supplier_items")
       .upsert({
         supplier_id: supplierId,
         inventory_item_id: inventoryItemId,
-        unit_cost: data.unit_cost || 0,
-        lead_time_days: data.lead_time_days || 7,
+        unit_price: data.unit_price || 0,
         minimum_order_quantity: data.minimum_order_quantity || 1,
-        supplier_item_code: data.supplier_item_code || null,
       }, { onConflict: "supplier_id,inventory_item_id" })
       .select()
       .single();
@@ -182,8 +179,10 @@ export class AdvancedInventoryService {
   }
 
   async getReorderSuggestions(clinicId) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    const fmt = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    const thirtyDaysAgoStr = fmt(d);
 
     const { data: items, error: itemsError } = await this.supabase
       .from("inventory_items")
@@ -196,17 +195,15 @@ export class AdvancedInventoryService {
       .select("inventory_item_id, quantity, created_at")
       .eq("clinic_id", clinicId)
       .in("type", ["dispensed", "stock_out", "expired"])
-      .gte("created_at", thirtyDaysAgo.toISOString());
+      .gte("created_at", thirtyDaysAgoStr);
 
     const { data: supplierLinks } = await this.supabase
-      .from("inventory_supplier_items")
+      .from("supplier_items")
       .select(`
         inventory_item_id,
-        lead_time_days,
-        unit_cost,
-        inventory_suppliers(id, name)
-      `)
-      .eq("clinic_id", clinicId);
+        unit_price,
+        suppliers(id, name, lead_time_days)
+      `);
 
     const consumptionByItem = {};
     for (const tx of transactions || []) {
@@ -230,7 +227,7 @@ export class AdvancedInventoryService {
       const totalConsumed = consumptionByItem[item.id] || 0;
       const dailyRate = totalConsumed / 30;
       const supplierInfo = supplierMap[item.id];
-      const leadTime = supplierInfo?.lead_time_days || 7;
+      const leadTime = supplierInfo?.suppliers?.lead_time_days || 7;
       const reorderQty = Math.ceil(dailyRate * leadTime) || 1;
 
       suggestions.push({
@@ -242,8 +239,8 @@ export class AdvancedInventoryService {
         daily_rate: Math.round(dailyRate * 100) / 100,
         lead_time_days: leadTime,
         reorder_quantity: reorderQty,
-        unit_cost: supplierInfo?.unit_cost || 0,
-        supplier_name: supplierInfo?.inventory_suppliers?.name || null,
+        unit_price: supplierInfo?.unit_price || 0,
+        supplier_name: supplierInfo?.suppliers?.name || null,
       });
     }
 
@@ -255,7 +252,7 @@ export class AdvancedInventoryService {
       .from("purchase_orders")
       .select(`
         *,
-        inventory_suppliers(id, name),
+        suppliers(id, name),
         purchase_order_items(*)
       `)
       .eq("clinic_id", clinicId);
@@ -269,13 +266,16 @@ export class AdvancedInventoryService {
 
   async createPurchaseOrder(clinicId, supplierId, items, userId) {
     const totalAmount = items.reduce((sum, item) =>
-      sum + (item.quantity * (item.unit_cost || 0)), 0);
+      sum + (item.quantity * (item.unit_price || 0)), 0);
+
+    const orderNumber = `PO-${Date.now().toString(36).toUpperCase()}`;
 
     const { data: po, error: poError } = await this.supabase
       .from("purchase_orders")
       .insert({
         clinic_id: clinicId,
         supplier_id: supplierId,
+        order_number: orderNumber,
         status: "draft",
         total_amount: totalAmount,
         created_by: userId,
@@ -291,8 +291,8 @@ export class AdvancedInventoryService {
           purchase_order_id: po.id,
           inventory_item_id: item.inventory_item_id,
           quantity: item.quantity,
-          unit_cost: item.unit_cost || 0,
-          total: item.quantity * (item.unit_cost || 0),
+          unit_price: item.unit_price || 0,
+          total: item.quantity * (item.unit_price || 0),
         })));
       if (itemsError) throw itemsError;
     }
@@ -336,14 +336,14 @@ export class AdvancedInventoryService {
         quantityReceived,
         previousStock,
         newStock,
-        `PO received: ${poId}`,
+        `PO received: ${po.order_number || poId}`,
         userId
       );
     }
 
     await this.supabase
       .from("purchase_orders")
-      .update({ status: "received", received_at: new Date().toISOString() })
+      .update({ status: "received", received_date: new Date().toISOString().split("T")[0] })
       .eq("id", poId)
       .eq("clinic_id", clinicId);
 
@@ -368,13 +368,13 @@ export class AdvancedInventoryService {
       .from("stock_transfers")
       .insert({
         clinic_id: clinicId,
+        source_clinic_id: data.source_clinic_id || clinicId,
+        destination_clinic_id: data.destination_clinic_id || clinicId,
         inventory_item_id: data.inventory_item_id,
         quantity: data.quantity,
-        from_location: data.from_location || null,
-        to_location: data.to_location || null,
+        reason: data.reason || null,
         status: "pending",
-        notes: data.notes || null,
-        created_by: userId,
+        requested_by: userId,
       })
       .select()
       .single();
@@ -391,21 +391,21 @@ export class AdvancedInventoryService {
       .single();
     if (transferError || !transfer) throw new Error("Transfer not found");
 
-    const { data: item } = await this.supabase
+    const { data: destItem } = await this.supabase
       .from("inventory_items")
       .select("current_stock")
       .eq("id", transfer.inventory_item_id)
       .eq("clinic_id", clinicId)
       .single();
 
-    if (!item) throw new Error("Inventory item not found");
+    if (!destItem) throw new Error("Inventory item not found at destination");
 
-    const previousStock = item.current_stock;
-    const newStock = previousStock + transfer.quantity;
+    const destPreviousStock = destItem.current_stock;
+    const destNewStock = destPreviousStock + transfer.quantity;
 
     await this.supabase
       .from("inventory_items")
-      .update({ current_stock: newStock, updated_at: new Date().toISOString() })
+      .update({ current_stock: destNewStock, updated_at: new Date().toISOString() })
       .eq("id", transfer.inventory_item_id)
       .eq("clinic_id", clinicId);
 
@@ -414,11 +414,39 @@ export class AdvancedInventoryService {
       transfer.inventory_item_id,
       "stock_in",
       transfer.quantity,
-      previousStock,
-      newStock,
+      destPreviousStock,
+      destNewStock,
       `Stock transfer received: ${transferId}`,
       userId
     );
+
+    if (transfer.source_clinic_id && transfer.source_clinic_id !== clinicId) {
+      const { data: srcItem } = await this.supabase
+        .from("inventory_items")
+        .select("id, current_stock")
+        .eq("id", transfer.inventory_item_id)
+        .eq("clinic_id", transfer.source_clinic_id)
+        .maybeSingle();
+
+      if (srcItem) {
+        const srcNewStock = Math.max(0, srcItem.current_stock - transfer.quantity);
+        await this.supabase
+          .from("inventory_items")
+          .update({ current_stock: srcNewStock, updated_at: new Date().toISOString() })
+          .eq("id", srcItem.id);
+
+        await this._recordTransaction(
+          transfer.source_clinic_id,
+          transfer.inventory_item_id,
+          "stock_out",
+          transfer.quantity,
+          srcItem.current_stock,
+          srcNewStock,
+          `Stock transfer sent: ${transferId}`,
+          userId
+        );
+      }
+    }
 
     await this.supabase
       .from("stock_transfers")

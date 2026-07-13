@@ -107,9 +107,11 @@ export function getPaymentService() {
     },
 
     async getRevenueStats() {
-      const today = new Date().toISOString().split("T")[0];
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-      const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
+      const now = new Date();
+      const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      const today = fmt(now);
+      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-01`;
+      const startOfYear = `${now.getFullYear()}-01-01`;
 
       const [todayRes, monthRes, yearRes, allRes, subRes, clinicRes] = await Promise.all([
         supabase.from("payments").select("amount").eq("status", "verified").gte("verified_at", today),

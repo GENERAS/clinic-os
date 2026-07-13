@@ -251,9 +251,9 @@ export default function MasterDataPage() {
     ];
     const serviceFields = [
         { key: "name", label: "Name", required: true },
-        { key: "category", label: "Category", type: "select", options: ["consultation", "procedure", "lab", "imaging", "other"] },
+        { key: "category", label: "Category", type: "select", options: ["consultation", "procedure", "lab", "pharmacy", "other"] },
         { key: "price", label: "Price (RWF)", type: "number" },
-        { key: "tax_classification", label: "Tax Class", type: "select", options: ["exempt", "standard", "reduced"] },
+        { key: "tax_classification", label: "Tax Class", type: "select", options: ["A", "B", "C", "D"] },
     ];
     const labTestFields = [
         { key: "name", label: "Name", required: true },

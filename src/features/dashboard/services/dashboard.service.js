@@ -35,8 +35,9 @@ export function getDashboardService() {
             operating_hours: operatingHours,
         };
     };
+    const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
     const getStats = async (clinicId) => {
-        const today = new Date().toISOString().split("T")[0] || "";
+        const today = todayStr();
         const [{ count: patients }, { count: todayPatients }, { count: appointments }, { count: todayAppts }, { count: inventory }, { count: staff }] = await Promise.all([
             supabase.from("patients").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId),
             supabase.from("patients").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId).gte("created_at", today),
@@ -55,7 +56,7 @@ export function getDashboardService() {
         };
     };
     const getTodayAppointments = async (clinicId) => {
-        const today = new Date().toISOString().split("T")[0] || "";
+        const today = todayStr();
         const { data } = await supabase
             .from("appointments")
             .select("*")
@@ -80,7 +81,7 @@ export function getDashboardService() {
         });
     };
     const getUpcomingAppointments = async (clinicId) => {
-        const today = new Date().toISOString().split("T")[0] || "";
+        const today = todayStr();
         const { data } = await supabase
             .from("appointments")
             .select("*")
@@ -144,7 +145,7 @@ export function getDashboardService() {
     };
     const getTasks = async (clinicId) => {
         const tasks = [];
-        const today = new Date().toISOString().split("T")[0] || "";
+        const today = todayStr();
         const { data: inventoryItems } = await supabase
             .from("inventory_items")
             .select("current_stock, minimum_stock")

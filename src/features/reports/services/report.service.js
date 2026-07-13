@@ -4,21 +4,24 @@ export function getReportService() {
     const supabase = createClient();
 
     function dateRange(period) {
+        const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         if (period && typeof period === "object" && period.start && period.end) {
-            return { start: new Date(period.start).toISOString(), end: new Date(period.end).toISOString() };
+            return { start: fmt(new Date(period.start)), end: fmt(new Date(period.end)) };
         }
         const now = new Date();
         const y = now.getFullYear();
         const m = now.getMonth();
         const d = now.getDate();
+        const today = fmt(now);
+        const fmtDate = (yr, mo, dy) => `${yr}-${String(mo + 1).padStart(2, "0")}-${String(dy).padStart(2, "0")}`;
         switch (period) {
-            case "today": return { start: new Date(y, m, d).toISOString(), end: now.toISOString() };
-            case "yesterday": return { start: new Date(y, m, d - 1).toISOString(), end: new Date(y, m, d).toISOString() };
-            case "week": { const sd = new Date(now); sd.setDate(d - now.getDay()); sd.setHours(0, 0, 0, 0); return { start: sd.toISOString(), end: now.toISOString() }; }
-            case "month": return { start: new Date(y, m, 1).toISOString(), end: now.toISOString() };
-            case "quarter": { const qs = Math.floor(m / 3) * 3; return { start: new Date(y, qs, 1).toISOString(), end: now.toISOString() }; }
-            case "year": return { start: new Date(y, 0, 1).toISOString(), end: now.toISOString() };
-            default: { const p = parseInt(period); if (!isNaN(p)) { const sd = new Date(now); sd.setDate(d - p); sd.setHours(0, 0, 0, 0); return { start: sd.toISOString(), end: now.toISOString() }; } return { start: new Date(0).toISOString(), end: now.toISOString() }; }
+            case "today": return { start: fmtDate(y, m, d), end: today };
+            case "yesterday": { const yesterday = new Date(y, m, d - 1); return { start: fmt(yesterday), end: fmtDate(y, m, d) }; }
+            case "week": { const sd = new Date(now); sd.setDate(d - now.getDay()); return { start: fmt(sd), end: today }; }
+            case "month": return { start: fmtDate(y, m, 1), end: today };
+            case "quarter": { const qs = Math.floor(m / 3) * 3; return { start: fmtDate(y, qs, 1), end: today }; }
+            case "year": return { start: fmtDate(y, 0, 1), end: today };
+            default: { const p = parseInt(period); if (!isNaN(p)) { const sd = new Date(now); sd.setDate(d - p); return { start: fmt(sd), end: today }; } return { start: "2000-01-01", end: today }; }
         }
     }
 

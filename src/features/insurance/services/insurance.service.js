@@ -144,11 +144,11 @@ export class InsuranceService {
         patient_id: data.patient_id,
         insurance_id: data.insurance_id,
         consultation_id: data.consultation_id || null,
+        provider: data.provider || "Unknown",
         procedure_description: data.procedure_description,
         estimated_cost: data.estimated_cost,
-        diagnosis_code: data.diagnosis_code || null,
         status: "pending",
-        requested_by: userId,
+        created_by: userId,
         notes: data.notes || null,
       })
       .select("id")
@@ -212,7 +212,7 @@ export class InsuranceService {
       return { within_cap: true, annual_limit: insurance.annual_limit, used: 0, remaining: insurance.annual_limit };
     }
 
-    const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+    const yearStart = `${new Date().getFullYear()}-01-01`;
     const { data: claims, error: claimErr } = await this.supabase
       .from("insurance_claims")
       .select("covered_amount")
@@ -306,7 +306,7 @@ export class InsuranceService {
       .from("insurance_claims")
       .update({
         status: "submitted",
-        submitted_at: new Date().toISOString(),
+        submission_date: new Date().toISOString(),
       })
       .eq("id", claimId)
       .eq("clinic_id", clinicId);

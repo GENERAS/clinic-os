@@ -26,10 +26,10 @@ export function StaffTable({ staff }) {
               <td className="px-4 py-3">
                 <Link to={`/settings/staff/${member.id}`} className="flex items-center gap-3">
                   <div className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {member.avatar_url ? (<img src={member.avatar_url} alt="" className="size-8 rounded-full object-cover"/>) : (member.full_name.charAt(0).toUpperCase())}
+                    {member.avatar_url ? (<img src={member.avatar_url} alt="" className="size-8 rounded-full object-cover"/>) : ((member.full_name || "?").charAt(0).toUpperCase())}
                   </div>
                   <div>
-                    <p className="font-medium">{member.full_name}</p>
+                    <p className="font-medium">{member.full_name || "Unknown"}</p>
                     <p className="text-xs text-muted-foreground">{member.email}</p>
                   </div>
                 </Link>
