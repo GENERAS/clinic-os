@@ -191,7 +191,7 @@ export default function StaffDetailPage() {
         <div className="flex flex-col items-center gap-3 sm:items-start">
           <div className="relative">
             <div className="flex size-20 items-center justify-center rounded-full bg-muted text-2xl font-medium">
-              {member.avatar_url ? (<img src={member.avatar_url} alt="" className="size-20 rounded-full object-cover"/>) : (member.full_name.charAt(0).toUpperCase())}
+              {member.avatar_url ? (<img src={member.avatar_url} alt={`${member.full_name}'s avatar`} className="size-20 rounded-full object-cover"/>) : (member.full_name.charAt(0).toUpperCase())}
             </div>
             {isOwner && isSelf && (<label className="absolute bottom-0 right-0 flex size-6 cursor-pointer items-center justify-center rounded-full border bg-background text-xs hover:bg-muted">
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload}/>

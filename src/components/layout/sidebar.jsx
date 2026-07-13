@@ -46,7 +46,7 @@ function NavSection({ label, children }) {
 export function Sidebar({ isOpen, onClose }) {
   const { clinic, user, logout, isSuperAdmin } = useAuth();
   return (<>
-    {isOpen && (<div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onClose}/>)}
+    {isOpen && (<div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onClose} onKeyDown={(e) => e.key === "Escape" && onClose()} role="presentation" />)}
 
     <aside className={cn(
       "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white text-slate-900 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
@@ -62,7 +62,7 @@ export function Sidebar({ isOpen, onClose }) {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-2 py-4 scrollbar-thin">
+      <nav aria-label="Main navigation" className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden px-2 py-4 scrollbar-thin">
         <NavSection label="Overview">
           <NavItem item={{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }} onClose={onClose} />
         </NavSection>
@@ -127,7 +127,7 @@ export function Sidebar({ isOpen, onClose }) {
             <span className="truncate">Admin Portal</span>
           </Link>
         )}
-        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors min-h-[44px]">
+        <button onClick={logout} aria-label="Sign out" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 lg:py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors min-h-[44px]">
           <LogOut className="size-[18px] shrink-0" />
           <span className="truncate">Sign out</span>
         </button>

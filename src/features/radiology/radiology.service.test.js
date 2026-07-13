@@ -23,7 +23,7 @@ describe("RadiologyService (Round 4 fixes)", () => {
       await service.uploadImage("clinic-1", "order-1", {
         name: "xray.dcm",
         size: 1024000,
-        type: "image/dcm",
+        type: "application/dicom",
       }, "user-1");
 
       expect(storageFrom.createSignedUrl).toHaveBeenCalled();
@@ -37,7 +37,7 @@ describe("RadiologyService (Round 4 fixes)", () => {
       await service.uploadImage("clinic-1", "order-1", {
         name: "xray.dcm",
         size: 1024000,
-        type: "image/dcm",
+        type: "application/dicom",
       }, "user-1");
 
       const insertData = mockSupabase._state.insertData;

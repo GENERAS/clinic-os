@@ -43,6 +43,20 @@ export default function NewAppointmentPage() {
             });
         }
     }, [searchParams, clinicId, setValue]);
+    useEffect(() => {
+        const dateParam = searchParams.get("date");
+        const hourParam = searchParams.get("hour");
+        if (dateParam) {
+            setValue("appointment_date", dateParam);
+        }
+        if (hourParam) {
+            const h = parseInt(hourParam, 10);
+            const startTime = `${String(h).padStart(2, "0")}:00`;
+            const endTime = `${String(h + 1).padStart(2, "0")}:00`;
+            setValue("start_time", startTime);
+            setValue("end_time", endTime);
+        }
+    }, [searchParams, setValue]);
     const handlePatientSelect = (patient) => {
         setValue("patient_name", patient.full_name);
         setValue("patient_phone", patient.phone);

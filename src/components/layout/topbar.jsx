@@ -12,7 +12,7 @@ export function Topbar({ onMenuClick, className }) {
     const [unreadCount, setUnreadCount] = useState(0);
     useEffect(() => {
         if (!clinicId) return;
-        getNotificationService().getUnreadCount(clinicId).then(setUnreadCount).catch(() => {});
+        getNotificationService().getUnreadCount(clinicId).then(setUnreadCount).catch((e) => console.error("Failed to load notification count:", e));
     }, [clinicId]);
     const initials = user?.fullName
         ? user.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -20,13 +20,13 @@ export function Topbar({ onMenuClick, className }) {
     return (
         <header className={cn("bg-background/80 border-border/50 flex h-14 shrink-0 items-center justify-between border-b px-3 sm:px-4 lg:px-6 backdrop-blur-sm", className)}>
             <div className="flex items-center gap-2 sm:gap-3">
-                <button onClick={onMenuClick} className="text-muted-foreground hover:text-foreground -ml-1 flex size-10 items-center justify-center rounded-md lg:hidden touch-target">
+                <button onClick={onMenuClick} aria-label="Open menu" className="text-muted-foreground hover:text-foreground -ml-1 flex size-10 items-center justify-center rounded-md lg:hidden touch-target">
                     <Menu className="size-5" />
                 </button>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2">
-                <button onClick={() => navigate("/notifications")} className="text-muted-foreground hover:text-foreground relative flex size-10 items-center justify-center rounded-md transition-colors touch-target">
+                <button onClick={() => navigate("/notifications")} aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`} className="text-muted-foreground hover:text-foreground relative flex size-10 items-center justify-center rounded-md transition-colors touch-target">
                     <Bell className="size-[18px]" />
                     {unreadCount > 0 && (
                         <span className="bg-destructive text-destructive-foreground absolute right-1 top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-medium leading-none">

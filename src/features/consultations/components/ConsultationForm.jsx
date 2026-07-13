@@ -630,7 +630,7 @@ export function ConsultationForm({ patient, doctorName, initialData, onSave, onC
             .then(({ data }) => {
                 if (data?.allergies) setPatientAllergies(data.allergies);
             })
-            .catch(() => {});
+            .catch((e) => console.error("Failed to load patient allergies:", e));
     }, [patient?.id]);
 
     const handleChiefComplaintChange = (list) => {

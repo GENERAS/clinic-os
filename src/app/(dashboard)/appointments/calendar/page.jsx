@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { startOfMonth, endOfMonth, format } from "date-fns";
+import { toast } from "sonner";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getAppointmentService } from "@/features/appointments/services/appointment.service";
 import { useRealtimeAppointments } from "@/hooks/useRealtimeAppointments";
@@ -11,8 +12,10 @@ import { RealtimeStatusBadge } from "@/components/shared/realtime-status-badge";
 
 export default function CalendarPage() {
   const navigate = useNavigate();
-  const { clinic: authClinic } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { clinic: authClinic, user } = useAuth();
   const clinicId = authClinic?.id;
+  const userId = user?.id;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState("month");
   const [search, setSearch] = useState("");
@@ -58,9 +61,29 @@ export default function CalendarPage() {
     });
   }, [appointments, currentDate, view, search, doctorFilter, statusFilter]);
 
-  const handleAppointmentClick = (id) => {
+  const handleAppointmentClick = useCallback((id) => {
     navigate(`/appointments/${id}`);
-  };
+  }, [navigate]);
+
+  const handleSlotClick = useCallback((dateStr, hour) => {
+    const params = new URLSearchParams({ date: dateStr });
+    if (hour) params.set("hour", hour);
+    navigate(`/appointments/new?${params.toString()}`);
+  }, [navigate]);
+
+  const handleReschedule = useCallback(async (appointmentId, newDate, newStartTime, newEndTime) => {
+    if (!clinicId || !userId) return;
+    try {
+      await service.rescheduleAppointment(clinicId, appointmentId, {
+        appointment_date: newDate,
+        start_time: newStartTime,
+        end_time: newEndTime,
+      }, userId);
+      toast.success("Appointment rescheduled");
+    } catch (err) {
+      toast.error(err.message || "Failed to reschedule appointment");
+    }
+  }, [clinicId, userId, service]);
 
   return (
     <div className="space-y-4">
@@ -75,6 +98,8 @@ export default function CalendarPage() {
         onDateChange={setCurrentDate}
         onViewChange={setView}
         onAppointmentClick={handleAppointmentClick}
+        onSlotClick={handleSlotClick}
+        onReschedule={handleReschedule}
       />
     </div>
   );

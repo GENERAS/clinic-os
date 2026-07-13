@@ -31,7 +31,7 @@ export default function NewInventoryItemPage() {
     useEffect(() => {
         if (!clinicId)
             return;
-        service.getCategories(clinicId).then(setCategories).catch(() => { });
+        service.getCategories(clinicId).then(setCategories).catch((e) => console.error("Failed to load categories:", e));
     }, [clinicId, service]);
     const handleAddCategory = async () => {
         if (!clinicId || !newCategoryName.trim())

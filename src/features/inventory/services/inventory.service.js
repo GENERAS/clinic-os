@@ -228,7 +228,10 @@ export function getInventoryService() {
                 newStock = previousStock + values.quantity;
             }
             else if (values.type === "stock_out" || values.type === "expired") {
-                newStock = Math.max(0, previousStock - values.quantity);
+                if (values.quantity > previousStock) {
+                    throw new Error(`Insufficient stock. Available: ${previousStock}, requested: ${values.quantity}`);
+                }
+                newStock = previousStock - values.quantity;
             }
             else {
                 newStock = Math.max(0, values.quantity);

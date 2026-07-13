@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/client";
 
 let cachedService = null;
 
+const roundCurrency = (val) => Math.round(val) || 0;
+
 export class BillingService {
     constructor(supabase) {
         this.supabase = supabase;
@@ -81,7 +83,7 @@ export class BillingService {
                     description: item.description,
                     quantity: item.quantity || 1,
                     unit_price: item.unit_price,
-                    total: (item.quantity || 1) * item.unit_price,
+                    total: roundCurrency((item.quantity || 1) * item.unit_price),
                     service_catalog_id: item.service_catalog_id || null,
                 })));
             if (itemsError) {
@@ -152,8 +154,8 @@ export class BillingService {
             .select("amount")
             .eq("invoice_id", invoiceId);
 
-        const paid = (payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
-        const total = parseFloat(invoice.total);
+        const paid = roundCurrency((payments || []).reduce((sum, p) => sum + parseFloat(p.amount), 0));
+        const total = roundCurrency(parseFloat(invoice.total));
         let status;
         if (paid >= total) status = "paid";
         else if (paid > 0) status = "partially_paid";
@@ -187,8 +189,8 @@ export class BillingService {
         const invs = invoices || [];
         const pays = payments || [];
 
-        const totalBilled = invs.reduce((s, i) => s + parseFloat(i.total), 0);
-        const totalCollected = pays.reduce((s, p) => s + parseFloat(p.amount), 0);
+        const totalBilled = roundCurrency(invs.reduce((s, i) => s + parseFloat(i.total), 0));
+        const totalCollected = roundCurrency(pays.reduce((s, p) => s + parseFloat(p.amount), 0));
 
         const { data: paymentsByInvoiceRaw } = await this.supabase
             .from("patient_payments")
@@ -199,19 +201,19 @@ export class BillingService {
 
         const paidByInvoice = {};
         (paymentsByInvoiceRaw || []).forEach(p => {
-            paidByInvoice[p.invoice_id] = (paidByInvoice[p.invoice_id] || 0) + parseFloat(p.amount);
+            paidByInvoice[p.invoice_id] = roundCurrency((paidByInvoice[p.invoice_id] || 0) + parseFloat(p.amount));
         });
 
-        const outstanding = invs
+        const outstanding = roundCurrency(invs
             .filter(i => i.status !== "paid" && i.status !== "cancelled" && i.status !== "refunded")
             .reduce((s, i) => {
                 const paid = paidByInvoice[i.id] || 0;
-                return s + Math.max(0, parseFloat(i.total) - paid);
-            }, 0);
+                return s + Math.max(0, roundCurrency(parseFloat(i.total)) - paid);
+            }, 0));
 
         const methodBreakdown = {};
         pays.forEach(p => {
-            methodBreakdown[p.payment_method] = (methodBreakdown[p.payment_method] || 0) + parseFloat(p.amount);
+            methodBreakdown[p.payment_method] = roundCurrency((methodBreakdown[p.payment_method] || 0) + parseFloat(p.amount));
         });
 
         return {
@@ -365,14 +367,14 @@ export class BillingService {
         if (error) throw error;
 
         const pays = payments || [];
-        const totalCollected = pays.reduce((s, p) => s + parseFloat(p.amount), 0);
+        const totalCollected = roundCurrency(pays.reduce((s, p) => s + parseFloat(p.amount), 0));
 
         const methodBreakdown = {};
         pays.forEach(p => {
             const method = p.payment_method || "unknown";
             if (!methodBreakdown[method]) methodBreakdown[method] = { count: 0, total: 0 };
             methodBreakdown[method].count++;
-            methodBreakdown[method].total += parseFloat(p.amount);
+            methodBreakdown[method].total = roundCurrency(methodBreakdown[method].total + parseFloat(p.amount));
         });
 
         return {

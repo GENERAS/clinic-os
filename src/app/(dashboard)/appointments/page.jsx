@@ -59,7 +59,7 @@ export default function AppointmentsPage() {
     useEffect(() => {
         if (!clinicId)
             return;
-        service.getDoctors(clinicId).then(setDoctors).catch(() => { });
+        service.getDoctors(clinicId).then(setDoctors).catch((e) => console.error("Failed to load doctors:", e));
     }, [clinicId, service]);
     const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
     const handleStatusChange = async (appointmentId, newStatus) => {

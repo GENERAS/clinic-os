@@ -111,9 +111,17 @@ export function getAppointmentService() {
       if (values.doctor_id || values.appointment_date || values.start_time || values.end_time) {
         await checkConflict(clinicId, doctorId, date, startTime, endTime, appointmentId);
       }
+      const ALLOWED_UPDATE_FIELDS = [
+        "patient_id", "patient_name", "patient_phone", "doctor_id",
+        "appointment_date", "start_time", "end_time", "reason", "notes", "status",
+      ];
+      const safeValues = {};
+      for (const key of ALLOWED_UPDATE_FIELDS) {
+        if (key in values) safeValues[key] = values[key];
+      }
       const { data, error } = await supabase
         .from("appointments")
-        .update({ ...values, updated_at: new Date().toISOString() })
+        .update({ ...safeValues, updated_at: new Date().toISOString() })
         .eq("id", appointmentId)
         .eq("clinic_id", clinicId)
         .select()

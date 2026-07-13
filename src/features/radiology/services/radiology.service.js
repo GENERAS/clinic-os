@@ -117,6 +117,14 @@ export class RadiologyService {
     }
 
     async uploadImage(clinicId, orderId, file, userId) {
+        const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/dicom", "application/dicom"];
+        const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            throw new Error("Only JPEG, PNG, WebP, and DICOM files are allowed");
+        }
+        if (file.size > MAX_SIZE) {
+            throw new Error("File size must be less than 50MB");
+        }
         const ext = file.name.split(".").pop();
         const path = `${clinicId}/${orderId}/${Date.now()}.${ext}`;
 

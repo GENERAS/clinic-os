@@ -11,12 +11,12 @@ export function PatientTable({ patients }) {
       <table className="w-full text-sm">
         <thead className="bg-muted/50">
           <tr>
-            <th className="px-4 py-3 text-left font-medium">Name</th>
-            <th className="hidden px-4 py-3 text-left font-medium sm:table-cell">Phone</th>
-            <th className="hidden px-4 py-3 text-left font-medium md:table-cell">Gender</th>
-            <th className="hidden px-4 py-3 text-left font-medium lg:table-cell">Visits</th>
-            <th className="hidden px-4 py-3 text-left font-medium lg:table-cell">Last Visit</th>
-            <th className="px-4 py-3 text-right font-medium">Actions</th>
+            <th scope="col" className="px-4 py-3 text-left font-medium">Name</th>
+            <th scope="col" className="hidden px-4 py-3 text-left font-medium sm:table-cell">Phone</th>
+            <th scope="col" className="hidden px-4 py-3 text-left font-medium md:table-cell">Gender</th>
+            <th scope="col" className="hidden px-4 py-3 text-left font-medium lg:table-cell">Visits</th>
+            <th scope="col" className="hidden px-4 py-3 text-left font-medium lg:table-cell">Last Visit</th>
+            <th scope="col" className="px-4 py-3 text-right font-medium">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y">

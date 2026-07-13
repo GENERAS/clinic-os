@@ -162,10 +162,11 @@ export class PharmacyService {
 
         if (dispError) throw dispError;
 
-        await this.supabase
+        const { error: rxUpdateError } = await this.supabase
             .from("prescriptions")
             .update({ quantity_dispensed: newDispensed, dispensed_status: newStatus })
             .eq("id", data.prescription_id);
+        if (rxUpdateError) throw rxUpdateError;
 
         if (data.batch_id) {
             const { data: batch } = await this.supabase
@@ -174,19 +175,24 @@ export class PharmacyService {
                 .eq("id", data.batch_id)
                 .single();
             if (batch) {
-                await this.supabase
+                const newBatchQty = Math.max(0, batch.quantity - data.quantity_dispensed);
+                const { error: batchError } = await this.supabase
                     .from("inventory_batches")
-                    .update({ quantity: Math.max(0, batch.quantity - data.quantity_dispensed) })
-                    .eq("id", data.batch_id);
+                    .update({ quantity: newBatchQty })
+                    .eq("id", data.batch_id)
+                    .gte("quantity", data.quantity_dispensed);
+                if (batchError) throw new Error("Concurrent dispensing detected. Please retry.");
             }
         }
 
         if (item) {
             const newStock = Math.max(0, item.current_stock - data.quantity_dispensed);
-            await this.supabase
+            const { error: stockError } = await this.supabase
                 .from("inventory_items")
                 .update({ current_stock: newStock, updated_at: new Date().toISOString() })
-                .eq("id", data.inventory_item_id);
+                .eq("id", data.inventory_item_id)
+                .gte("current_stock", data.quantity_dispensed);
+            if (stockError) throw new Error("Concurrent dispensing detected. Please retry.");
 
             await this.supabase
                 .from("inventory_transactions")

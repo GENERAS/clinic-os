@@ -5,6 +5,11 @@ import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
 import { TAX_CLASSES } from "@/features/insurance/services/insurance.service";
 
+const escapeHtml = (str) => {
+    if (!str) return "";
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+};
+
 const SERVICE_CATEGORIES = [
     { value: "consultation", label: "Consultation", icon: Stethoscope },
     { value: "lab", label: "Lab", icon: Beaker },
@@ -328,15 +333,15 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
                                 <button onClick={() => {
                                         const printWindow = window.open("", "_blank", "width=800,height=600");
                                         if (!printWindow) { toast.error("Pop-up blocked. Please allow pop-ups."); return; }
-                                        const clinicName = patient?.clinic_name || "ClinicOS";
-                                        const clinicPhone = patient?.clinic_phone || "";
-                                        const clinicAddress = patient?.clinic_address || "";
+                                        const clinicName = escapeHtml(patient?.clinic_name || "ClinicOS");
+                                        const clinicPhone = escapeHtml(patient?.clinic_phone || "");
+                                        const clinicAddress = escapeHtml(patient?.clinic_address || "");
                                         const payStatus = inv.status === "paid" ? "PAID" : inv.status === "partially_paid" ? "PARTIALLY PAID" : "UNPAID";
                                         const paid = (inv.patient_payments || []).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
                                         const balance = inv.total - paid;
                                         const lineItemsHtml = (inv.billing_line_items || []).map((line, i) =>
                                             `<tr>
-                                                <td style="padding:6px 0;border-bottom:1px solid #eee;">${i + 1}. ${line.description}</td>
+                                                <td style="padding:6px 0;border-bottom:1px solid #eee;">${i + 1}. ${escapeHtml(line.description)}</td>
                                                 <td style="padding:6px 0;border-bottom:1px solid #eee;text-align:center;">${line.quantity}</td>
                                                 <td style="padding:6px 0;border-bottom:1px solid #eee;text-align:right;">${formatCurrency(line.unit_price)}</td>
                                                 <td style="padding:6px 0;border-bottom:1px solid #eee;text-align:right;font-weight:600;">${formatCurrency(line.total)}</td>
@@ -375,7 +380,7 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
 <table style="margin-bottom:12px;">
   <tr><td style="padding:2px 0;font-size:12px;"><strong>Invoice #:</strong></td><td style="padding:2px 0;text-align:right;font-size:12px;">${inv.invoice_number}</td></tr>
   <tr><td style="padding:2px 0;font-size:12px;"><strong>Date:</strong></td><td style="padding:2px 0;text-align:right;font-size:12px;">${new Date(inv.created_at).toLocaleDateString()}</td></tr>
-  <tr><td style="padding:2px 0;font-size:12px;"><strong>Patient:</strong></td><td style="padding:2px 0;text-align:right;font-size:12px;">${inv.patients?.full_name || "N/A"}</td></tr>
+  <tr><td style="padding:2px 0;font-size:12px;"><strong>Patient:</strong></td><td style="padding:2px 0;text-align:right;font-size:12px;">${escapeHtml(inv.patients?.full_name) || "N/A"}</td></tr>
 </table>
 <table>
   <thead><tr style="border-bottom:2px solid #000;">

@@ -13,12 +13,12 @@ export function AppointmentTable({ appointments, clinicId, userId, onStatusChang
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <th className="px-4 py-2.5 text-left">Patient</th>
-            <th className="px-4 py-2.5 text-left">Doctor</th>
-            <th className="hidden px-4 py-2.5 text-left md:table-cell">Date & Time</th>
-            <th className="hidden px-4 py-2.5 text-left sm:table-cell">Status</th>
-            <th className="hidden px-4 py-2.5 text-left lg:table-cell">Created By</th>
-            <th className="px-4 py-2.5 text-right">Actions</th>
+            <th scope="col" className="px-4 py-2.5 text-left">Patient</th>
+            <th scope="col" className="px-4 py-2.5 text-left">Doctor</th>
+            <th scope="col" className="hidden px-4 py-2.5 text-left md:table-cell">Date & Time</th>
+            <th scope="col" className="hidden px-4 py-2.5 text-left sm:table-cell">Status</th>
+            <th scope="col" className="hidden px-4 py-2.5 text-left lg:table-cell">Created By</th>
+            <th scope="col" className="px-4 py-2.5 text-right">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/50">

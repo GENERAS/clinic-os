@@ -13,12 +13,12 @@ export function StaffTable({ staff }) {
       <table className="w-full text-sm">
         <thead className="bg-muted/50">
           <tr>
-            <th className="px-4 py-3 text-left font-medium">Name</th>
-            <th className="px-4 py-3 text-left font-medium">Role</th>
-            <th className="hidden px-4 py-3 text-left font-medium md:table-cell">Contact</th>
-            <th className="hidden px-4 py-3 text-left font-medium sm:table-cell">Status</th>
-            <th className="hidden px-4 py-3 text-left font-medium lg:table-cell">Last Login</th>
-            <th className="px-4 py-3 text-right font-medium">Actions</th>
+            <th scope="col" className="px-4 py-3 text-left font-medium">Name</th>
+            <th scope="col" className="px-4 py-3 text-left font-medium">Role</th>
+            <th scope="col" className="hidden px-4 py-3 text-left font-medium md:table-cell">Contact</th>
+            <th scope="col" className="hidden px-4 py-3 text-left font-medium sm:table-cell">Status</th>
+            <th scope="col" className="hidden px-4 py-3 text-left font-medium lg:table-cell">Last Login</th>
+            <th scope="col" className="px-4 py-3 text-right font-medium">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -26,7 +26,7 @@ export function StaffTable({ staff }) {
               <td className="px-4 py-3">
                 <Link to={`/settings/staff/${member.id}`} className="flex items-center gap-3">
                   <div className="flex size-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {member.avatar_url ? (<img src={member.avatar_url} alt="" className="size-8 rounded-full object-cover"/>) : ((member.full_name || "?").charAt(0).toUpperCase())}
+                    {member.avatar_url ? (<img src={member.avatar_url} alt={`${member.full_name}'s avatar`} className="size-8 rounded-full object-cover"/>) : ((member.full_name || "?").charAt(0).toUpperCase())}
                   </div>
                   <div>
                     <p className="font-medium">{member.full_name || "Unknown"}</p>

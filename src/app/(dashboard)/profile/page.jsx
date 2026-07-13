@@ -84,9 +84,9 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative shrink-0">
               <div className="flex size-20 items-center justify-center overflow-hidden rounded-full bg-muted">
-                {user.avatarUrl ? (<img src={user.avatarUrl} alt="" className="size-full object-cover"/>) : (<User className="size-8 text-muted-foreground"/>)}
+                {user.avatarUrl ? (<img src={user.avatarUrl} alt="Your avatar" className="size-full object-cover"/>) : (<User className="size-8 text-muted-foreground"/>)}
               </div>
-              <label className="absolute bottom-0 right-0 flex size-7 cursor-pointer items-center justify-center rounded-full border bg-background shadow-sm hover:bg-muted">
+              <label aria-label="Upload avatar" className="absolute bottom-0 right-0 flex size-7 cursor-pointer items-center justify-center rounded-full border bg-background shadow-sm hover:bg-muted">
                 <Camera className="size-3.5"/>
                 <input type="file" accept="image/*" className="sr-only" onChange={handleAvatarUpload} disabled={uploading}/>
               </label>

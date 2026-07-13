@@ -65,7 +65,7 @@ export default function InventoryPage() {
     useEffect(() => {
         if (!clinicId)
             return;
-        service.getCategories(clinicId).then(setCategories).catch(() => { });
+        service.getCategories(clinicId).then(setCategories).catch((e) => console.error("Failed to load categories:", e));
     }, [clinicId, service]);
     const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
     const handleAdjust = async (values) => {

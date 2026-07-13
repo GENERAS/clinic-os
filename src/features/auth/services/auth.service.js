@@ -77,11 +77,19 @@ export const authService = {
     },
     async uploadAvatar(userId, file) {
         const supabase = createClient();
+        const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            throw new Error("Only JPEG, PNG, WebP, and GIF images are allowed");
+        }
+        if (file.size > MAX_SIZE) {
+            throw new Error("File size must be less than 5MB");
+        }
         const ext = file.name.split(".").pop() || "jpg";
         const filePath = `avatars/${userId}/${Date.now()}.${ext}`;
         const { error: uploadError } = await supabase.storage
             .from("avatars")
-            .upload(filePath, file, { upsert: true });
+            .upload(filePath, file, { upsert: true, contentType: file.type });
         if (uploadError)
             throw uploadError;
         const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);

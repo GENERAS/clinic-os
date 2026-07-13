@@ -3,6 +3,11 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Printer, Download, MessageSquare, FileText, CreditCard } from "lucide-react";
 
+const escapeHtml = (str) => {
+    if (!str) return "";
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+};
+
 function formatFrequency(freq) {
     const map = {
         once_daily: "once daily",
@@ -40,7 +45,7 @@ export function PrescriptionPreview({ consultation, clinic }) {
         win.document.write(`
             <html>
             <head>
-                <title>Prescription - ${consultation?.patients?.full_name || "Patient"}</title>
+                <title>Prescription - ${escapeHtml(consultation?.patients?.full_name) || "Patient"}</title>
                 <style>
                     @page { margin: 15mm; }
                     body { font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.5; color: #000; padding: 20px; }

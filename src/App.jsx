@@ -8,6 +8,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { AdminRoute } from "@/components/guards/admin-route";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
+import { PageErrorBoundary } from "@/components/shared/page-error-boundary";
 const LoginPage = lazy(() => import("@/app/(auth)/login/page"));
 const SignupPage = lazy(() => import("@/app/(auth)/signup/page"));
 const ForgotPasswordPage = lazy(() => import("@/app/(auth)/forgot-password/page"));
@@ -113,7 +114,9 @@ function AuthLayout() {
 function AppLayout() {
     return (<DashboardLayout>
       <Suspense fallback={<Spinner />}>
-        <Outlet />
+        <PageErrorBoundary scope="Page">
+          <Outlet />
+        </PageErrorBoundary>
       </Suspense>
     </DashboardLayout>);
 }

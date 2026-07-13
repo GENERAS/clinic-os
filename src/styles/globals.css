@@ -285,7 +285,7 @@
   border-radius: var(--radius-xl);
   transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
-@utility premium-card-interactive:hover {
+.premium-card-interactive:hover {
   border-color: color-mix(in srgb, var(--primary) 30%, transparent);
   box-shadow: 0 2px 12px rgb(0 0 0 / 0.04);
   transform: translateY(-1px);
@@ -316,7 +316,7 @@
   outline: none;
   min-height: 44px;
 }
-@utility btn-primary:hover {
+.btn-primary:hover {
   opacity: 0.9;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
@@ -341,7 +341,7 @@
   outline: none;
   min-height: 44px;
 }
-@utility btn-secondary:hover {
+.btn-secondary:hover {
   background: var(--muted);
   border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
 }
@@ -365,7 +365,7 @@
   outline: none;
   min-height: 40px;
 }
-@utility btn-ghost:hover {
+.btn-ghost:hover {
   background: var(--muted);
   color: var(--foreground);
 }
@@ -384,11 +384,11 @@
   outline: none;
   min-height: 44px;
 }
-@utility input-premium::placeholder {
+.input-premium::placeholder {
   color: var(--muted-foreground);
   opacity: 0.6;
 }
-@utility input-premium:focus {
+.input-premium:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
 }
@@ -411,7 +411,7 @@
   background-position: right 0.75rem center;
   min-height: 44px;
 }
-@utility select-premium:focus {
+.select-premium:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
 }

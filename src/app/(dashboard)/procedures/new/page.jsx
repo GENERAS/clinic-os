@@ -51,7 +51,7 @@ export default function NewProcedurePage() {
             setDoctors(docs);
             setCatalog(cat);
             setInventoryItems(items);
-        }).catch(() => {});
+        }).catch((e) => console.error("Failed to load procedure data:", e));
     }, [clinicId, service]);
 
     // Patient search with debounce
