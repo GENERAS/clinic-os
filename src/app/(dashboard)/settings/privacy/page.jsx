@@ -19,7 +19,7 @@ const TABS = [
   { id: "masking", label: "Data Masking", icon: Lock },
 ];
 
-const CONSENT_TYPES = ["treatment", "data_sharing", "marketing", "research", "insurance_claim", "third_party_access"];
+const CONSENT_TYPES = ["treatment", "data_sharing", "marketing", "research", "insurance_claim", "referral"];
 const ENTITY_TYPES = ["patient", "consultation", "invoice", "prescription", "appointment", "lab_result", "insurance"];
 const ACTION_TYPES = ["create", "read", "update", "delete", "export", "share"];
 
@@ -348,10 +348,10 @@ export default function PrivacyPage() {
                     </div>
                     <span className="shrink-0 text-[10px] text-muted-foreground">{FORMAT_DATE(log.created_at)}</span>
                   </div>
-                  {log.old_values && (
+                  {log.old_value && (
                     <details className="mt-2">
                       <summary className="text-[10px] font-medium text-muted-foreground cursor-pointer hover:text-foreground">View changes</summary>
-                      <pre className="mt-1 rounded-lg bg-muted/20 p-2 text-[10px] overflow-x-auto">{JSON.stringify(log.old_values, null, 2)}</pre>
+                      <pre className="mt-1 rounded-lg bg-muted/20 p-2 text-[10px] overflow-x-auto">{JSON.stringify(log.old_value, null, 2)}</pre>
                     </details>
                   )}
                 </div>

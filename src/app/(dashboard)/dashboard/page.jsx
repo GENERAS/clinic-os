@@ -77,8 +77,8 @@ export default function DashboardPage() {
         supabase.from("triage_records").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("status", "waiting"),
       ]);
       setClinicalCounts({ consultations: consultations || 0, pendingLabs: pendingLabs || 0, triageWaiting: triageWaiting || 0 });
-    } catch {
-      if (!silent) toast.error("Failed to load dashboard");
+    } catch (err) {
+      if (!silent) toast.error(handleApiError(err, "Failed to load dashboard"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -120,7 +120,9 @@ export default function DashboardPage() {
         if (!prev) return prev;
         return { ...prev, notifications: prev.notifications.map((n) => n.id === id ? { ...n, is_read: true } : n) };
       });
-    } catch { }
+    } catch (err) {
+      toast.error(handleApiError(err, "Failed to mark notification"));
+    }
   };
 
   const handleMarkAllRead = async () => {
@@ -133,7 +135,9 @@ export default function DashboardPage() {
         return { ...prev, notifications: prev.notifications.map((n) => ({ ...n, is_read: true })) };
       });
       toast.success("All notifications marked as read");
-    } catch { }
+    } catch (err) {
+      toast.error(handleApiError(err, "Failed to mark all as read"));
+    }
   };
 
   if (loading) {

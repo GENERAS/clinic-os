@@ -318,8 +318,8 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
                                             const { getTaxService } = await import("@/features/tax/services/tax.service");
                                             const taxSvc = getTaxService();
                                             const receipt = await taxSvc.generateFiscalReceipt(clinicId, inv.id, {
-                                                total_amount: inv.total,
-                                                tax_amount: inv.tax || 0,
+                                                total: inv.total,
+                                                total_tax: inv.tax || 0,
                                                 tax_class: "D",
                                             });
                                             toast.success(`Fiscal receipt ${receipt.fiscal_number} generated`);

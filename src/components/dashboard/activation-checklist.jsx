@@ -49,7 +49,7 @@ export function ActivationChecklist({ clinicId }) {
     } catch {}
 
     try {
-      const { count: msgCount } = await supabase.from("message_logs").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId);
+      const { count: msgCount } = await supabase.from("whatsapp_messages").select("*", { count: "exact", head: true }).eq("clinic_id", clinicId);
       if (msgCount > 0) done.push("reminder");
     } catch {}
 

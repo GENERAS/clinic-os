@@ -29,7 +29,7 @@ export class PrivacyService {
                 consent_date: data.consent_date || new Date().toISOString().split("T")[0],
                 expiry_date: data.expiry_date || null,
                 notes: data.notes || null,
-                recorded_by: data.recorded_by || null,
+                witness_id: data.witness_id || data.recorded_by || null,
             })
             .select("id")
             .single();
@@ -42,8 +42,6 @@ export class PrivacyService {
             .from("patient_consents")
             .update({
                 consent_given: false,
-                revoked_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
             })
             .eq("id", consentId)
             .eq("clinic_id", clinicId);
@@ -130,7 +128,7 @@ export class PrivacyService {
 
     async getRetentionPolicies(clinicId) {
         const { data, error } = await this.supabase
-            .from("retention_policies")
+            .from("data_retention_policies")
             .select("*")
             .eq("clinic_id", clinicId)
             .order("entity_type", { ascending: true });
@@ -140,7 +138,7 @@ export class PrivacyService {
 
     async upsertRetentionPolicy(clinicId, data) {
         const { data: existing } = await this.supabase
-            .from("retention_policies")
+            .from("data_retention_policies")
             .select("id")
             .eq("clinic_id", clinicId)
             .eq("entity_type", data.entity_type)
@@ -148,12 +146,12 @@ export class PrivacyService {
 
         if (existing) {
             const { error } = await this.supabase
-                .from("retention_policies")
+                .from("data_retention_policies")
                 .update({
                     retention_days: data.retention_days,
-                    action: data.action || "archive",
-                    description: data.description || null,
-                    updated_at: new Date().toISOString(),
+                    archive_after_days: data.archive_after_days || data.retention_days,
+                    delete_after_days: data.delete_after_days || data.retention_days,
+                    is_active: data.is_active !== undefined ? data.is_active : true,
                 })
                 .eq("id", existing.id);
             if (error) throw error;
@@ -161,13 +159,14 @@ export class PrivacyService {
         }
 
         const { data: policy, error } = await this.supabase
-            .from("retention_policies")
+            .from("data_retention_policies")
             .insert({
                 clinic_id: clinicId,
                 entity_type: data.entity_type,
                 retention_days: data.retention_days,
-                action: data.action || "archive",
-                description: data.description || null,
+                archive_after_days: data.archive_after_days || data.retention_days,
+                delete_after_days: data.delete_after_days || data.retention_days,
+                is_active: data.is_active !== undefined ? data.is_active : true,
             })
             .select("id")
             .single();

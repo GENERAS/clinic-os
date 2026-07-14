@@ -53,7 +53,7 @@ export class InsuranceService {
         provider: data.provider,
         policy_number: data.policy_number,
         member_name: data.member_name || null,
-        coverage_type: data.coverage_type || "individual",
+        coverage_type: data.coverage_type || "basic",
         annual_limit: data.annual_limit || 0,
         valid_from: data.valid_from || null,
         valid_until: data.valid_until || null,
@@ -271,8 +271,8 @@ export class InsuranceService {
 
     const { data: billingData, error: billErr } = await this.supabase
       .from("billing_line_items")
-      .select("id, description, amount")
-      .eq("consultation_id", consultationId);
+      .select("id, description, total, billing_invoices!inner(consultation_id)")
+      .eq("billing_invoices.consultation_id", consultationId);
 
     const diagnoses = diagData || [];
     const billingItems = billingData || [];

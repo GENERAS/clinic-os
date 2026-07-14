@@ -13,11 +13,11 @@ import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
 
 const COLUMNS = [
-  { id: "upcoming", title: "Upcoming", statuses: ["scheduled", "confirmed"], dropStatus: "arrived", color: "bg-blue-50 border-blue-200", textColor: "text-blue-700" },
-  { id: "waiting", title: "Waiting", statuses: ["arrived"], dropStatus: "in_progress", color: "bg-amber-50 border-amber-200", textColor: "text-amber-700" },
-  { id: "inProgress", title: "In Progress", statuses: ["in_progress"], dropStatus: "completed", color: "bg-purple-50 border-purple-200", textColor: "text-purple-700" },
-  { id: "completed", title: "Completed", statuses: ["completed"], dropStatus: null, color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700" },
-  { id: "noShow", title: "No Show", statuses: ["cancelled", "no_show"], dropStatus: null, color: "bg-red-50 border-red-200", textColor: "text-red-700" },
+  { id: "upcoming", title: "Upcoming", statuses: ["scheduled", "confirmed"], dropStatus: "arrived", dragTargetStatus: "arrived", color: "bg-blue-50 border-blue-200", textColor: "text-blue-700" },
+  { id: "waiting", title: "Waiting", statuses: ["arrived"], dropStatus: "in_progress", dragTargetStatus: "in_progress", color: "bg-amber-50 border-amber-200", textColor: "text-amber-700" },
+  { id: "inProgress", title: "In Progress", statuses: ["in_progress"], dropStatus: "completed", dragTargetStatus: "completed", color: "bg-purple-50 border-purple-200", textColor: "text-purple-700" },
+  { id: "completed", title: "Completed", statuses: ["completed"], dropStatus: null, dragTargetStatus: null, color: "bg-emerald-50 border-emerald-200", textColor: "text-emerald-700" },
+  { id: "noShow", title: "No Show", statuses: ["cancelled", "no_show"], dropStatus: null, dragTargetStatus: "no_show", color: "bg-red-50 border-red-200", textColor: "text-red-700" },
 ];
 
 export default function TodayAppointmentsPage() {
@@ -58,10 +58,10 @@ export default function TodayAppointmentsPage() {
     if (!over) return;
     const appointmentId = active.id;
     const targetColumn = COLUMNS.find((c) => c.id === over.id);
-    if (!targetColumn || !targetColumn.dropStatus) return;
+    if (!targetColumn || !targetColumn.dragTargetStatus) return;
     const sourceColumn = COLUMNS.find((c) => c.statuses.includes(active.data.current.status));
     if (!sourceColumn || sourceColumn.id === targetColumn.id) return;
-    handleStatusChange(appointmentId, targetColumn.dropStatus);
+    handleStatusChange(appointmentId, targetColumn.dragTargetStatus);
   };
 
   const todayLabel = new Date().toLocaleDateString(undefined, {

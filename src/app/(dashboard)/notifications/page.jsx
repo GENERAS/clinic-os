@@ -6,6 +6,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getNotificationService } from "@/features/notifications/services/notification.service";
 import { NotificationList } from "@/features/notifications/components/notification-list";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errors";
 export default function NotificationsPage() {
     const { clinic: authClinic } = useAuth();
     const clinicId = authClinic?.id;
@@ -29,8 +30,8 @@ export default function NotificationsPage() {
             setNotifications(result.data);
             setTotal(result.total);
         }
-        catch {
-            toast.error("Failed to load notifications");
+        catch (err) {
+            toast.error(handleApiError(err, "Failed to load notifications"));
         }
         finally {
             setLoading(false);
@@ -46,8 +47,8 @@ export default function NotificationsPage() {
             await service.markAsRead(clinicId, id);
             setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
         }
-        catch {
-            toast.error("Failed to mark as read");
+        catch (err) {
+            toast.error(handleApiError(err, "Failed to mark as read"));
         }
     };
     const handleMarkAllRead = async () => {
@@ -59,8 +60,8 @@ export default function NotificationsPage() {
             setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
             toast.success("All notifications marked as read");
         }
-        catch {
-            toast.error("Failed to mark all as read");
+        catch (err) {
+            toast.error(handleApiError(err, "Failed to mark all as read"));
         }
         finally {
             setMarkingAll(false);

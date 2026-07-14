@@ -27,7 +27,7 @@ export class SchedulingService {
                 day_of_week: data.day_of_week,
                 start_time: data.start_time,
                 end_time: data.end_time,
-                slot_duration: data.slot_duration || 30,
+                slot_duration_minutes: data.slot_duration_minutes || data.slot_duration || 30,
                 max_patients: data.max_patients || 20,
                 is_active: data.is_active !== undefined ? data.is_active : true,
             })
@@ -40,7 +40,7 @@ export class SchedulingService {
     async updateDoctorSchedule(clinicId, scheduleId, data) {
         const { error } = await this.supabase
             .from("doctor_schedules")
-            .update({ ...data, updated_at: new Date().toISOString() })
+            .update({ ...data })
             .eq("id", scheduleId)
             .eq("clinic_id", clinicId);
         if (error) throw error;
@@ -78,7 +78,7 @@ export class SchedulingService {
             .not("status", "in", `("cancelled","no_show")`);
         if (apptError) throw apptError;
 
-        const slotDuration = schedule.slot_duration || 30;
+        const slotDuration = schedule.slot_duration_minutes || 30;
         const startMinutes = this._timeToMinutes(schedule.start_time);
         const endMinutes = this._timeToMinutes(schedule.end_time);
         const booked = (appointments || []).map((a) => ({
@@ -130,10 +130,10 @@ export class SchedulingService {
                 doctor_id: data.doctor_id,
                 facility_name: data.facility_name,
                 facility_address: data.facility_address || null,
-                day_of_week: data.day_of_week,
-                start_time: data.start_time,
-                end_time: data.end_time,
-                notes: data.notes || null,
+                day_of_week: Array.isArray(data.day_of_week) ? data.day_of_week : [data.day_of_week],
+                days_per_week: data.days_per_week || 1,
+                start_date: data.start_date || new Date().toISOString().split("T")[0],
+                end_date: data.end_date || null,
                 is_active: data.is_active !== undefined ? data.is_active : true,
             })
             .select("id")
@@ -145,7 +145,7 @@ export class SchedulingService {
     async updateFacilityAssignment(clinicId, assignmentId, data) {
         const { error } = await this.supabase
             .from("doctor_facility_assignments")
-            .update({ ...data, updated_at: new Date().toISOString() })
+            .update({ ...data })
             .eq("id", assignmentId)
             .eq("clinic_id", clinicId);
         if (error) throw error;
@@ -154,7 +154,7 @@ export class SchedulingService {
     async getDoctorBusyHours(clinicId, doctorId, dateFrom, dateTo) {
         const { data: assignments, error: assignError } = await this.supabase
             .from("doctor_facility_assignments")
-            .select("day_of_week, start_time, end_time, facility_name")
+            .select("day_of_week, facility_name, days_per_week")
             .eq("clinic_id", clinicId)
             .eq("doctor_id", doctorId)
             .eq("is_active", true);
@@ -178,12 +178,13 @@ export class SchedulingService {
             const dayOfWeek = currentDate.getDay();
             const dateStr = currentDate.toISOString().split("T")[0];
 
-            const facilitySlots = (assignments || []).filter((a) => a.day_of_week === dayOfWeek);
+            const facilitySlots = (assignments || []).filter((a) => {
+                const days = Array.isArray(a.day_of_week) ? a.day_of_week : [];
+                return days.includes(dayOfWeek);
+            });
             facilitySlots.forEach((slot) => {
                 busyHours.push({
                     date: dateStr,
-                    start_time: slot.start_time,
-                    end_time: slot.end_time,
                     source: "facility_assignment",
                     facility_name: slot.facility_name,
                 });
@@ -211,11 +212,10 @@ export class SchedulingService {
             .from("shifts")
             .insert({
                 clinic_id: clinicId,
-                name: data.name,
+                shift_name: data.shift_name || data.name,
                 start_time: data.start_time,
                 end_time: data.end_time,
-                shift_type: data.shift_type || null,
-                notes: data.notes || null,
+                color: data.color || '#3B82F6',
             })
             .select("id")
             .single();
@@ -239,7 +239,7 @@ export class SchedulingService {
             .select("id")
             .eq("clinic_id", clinicId)
             .eq("staff_id", staffId)
-            .eq("date", date)
+            .eq("assignment_date", date)
             .maybeSingle();
         if (existing) {
             throw new Error("Staff member is already assigned to a shift on this date");
@@ -251,8 +251,8 @@ export class SchedulingService {
                 clinic_id: clinicId,
                 staff_id: staffId,
                 shift_id: shiftId,
-                date: date,
-                status: "assigned",
+                assignment_date: date,
+                status: "scheduled",
             })
             .select("id")
             .single();
@@ -265,13 +265,13 @@ export class SchedulingService {
             .from("staff_shift_assignments")
             .select(`
                 *,
-                shifts(name, start_time, end_time, shift_type),
+                shifts(shift_name, start_time, end_time, color),
                 users!staff_shift_assignments_staff_id_fkey(id, full_name)
             `)
             .eq("clinic_id", clinicId)
-            .gte("date", dateFrom)
-            .lte("date", dateTo)
-            .order("date", { ascending: true });
+            .gte("assignment_date", dateFrom)
+            .lte("assignment_date", dateTo)
+            .order("assignment_date", { ascending: true });
         if (error) throw error;
         return data || [];
     }
@@ -279,7 +279,7 @@ export class SchedulingService {
     async swapShifts(clinicId, assignmentId1, assignmentId2) {
         const { data: a1, error: e1 } = await this.supabase
             .from("staff_shift_assignments")
-            .select("shift_id, staff_id, date")
+            .select("shift_id, staff_id, assignment_date")
             .eq("id", assignmentId1)
             .eq("clinic_id", clinicId)
             .single();
@@ -287,7 +287,7 @@ export class SchedulingService {
 
         const { data: a2, error: e2 } = await this.supabase
             .from("staff_shift_assignments")
-            .select("shift_id, staff_id, date")
+            .select("shift_id, staff_id, assignment_date")
             .eq("id", assignmentId2)
             .eq("clinic_id", clinicId)
             .single();
@@ -295,13 +295,13 @@ export class SchedulingService {
 
         const { error: u1 } = await this.supabase
             .from("staff_shift_assignments")
-            .update({ shift_id: a2.shift_id, staff_id: a2.staff_id, date: a2.date })
+            .update({ shift_id: a2.shift_id, staff_id: a2.staff_id, assignment_date: a2.assignment_date })
             .eq("id", assignmentId1);
         if (u1) throw u1;
 
         const { error: u2 } = await this.supabase
             .from("staff_shift_assignments")
-            .update({ shift_id: a1.shift_id, staff_id: a1.staff_id, date: a1.date })
+            .update({ shift_id: a1.shift_id, staff_id: a1.staff_id, assignment_date: a1.assignment_date })
             .eq("id", assignmentId2);
         if (u2) throw u2;
     }
@@ -396,12 +396,16 @@ export class SchedulingService {
             .insert({
                 clinic_id: clinicId,
                 provider_id: data.provider_id,
-                service_type: data.service_type,
-                split_percentage: data.split_percentage,
-                fixed_amount: data.fixed_amount || null,
+                split_type: data.split_type || "percentage",
+                consultation_split: data.consultation_split || 0,
+                procedure_split: data.procedure_split || 0,
+                lab_split: data.lab_split || 0,
+                pharmacy_split: data.pharmacy_split || 0,
+                consultation_fixed: data.consultation_fixed || 0,
+                procedure_fixed: data.procedure_fixed || 0,
                 effective_from: data.effective_from || new Date().toISOString().split("T")[0],
-                effective_until: data.effective_until || null,
-                notes: data.notes || null,
+                effective_to: data.effective_to || null,
+                is_active: data.is_active !== undefined ? data.is_active : true,
             })
             .select("id")
             .single();
@@ -412,7 +416,7 @@ export class SchedulingService {
     async updateProviderRevenueSplit(clinicId, splitId, data) {
         const { error } = await this.supabase
             .from("provider_revenue_splits")
-            .update({ ...data, updated_at: new Date().toISOString() })
+            .update({ ...data })
             .eq("id", splitId)
             .eq("clinic_id", clinicId);
         if (error) throw error;
@@ -425,7 +429,7 @@ export class SchedulingService {
             .eq("clinic_id", clinicId)
             .eq("provider_id", providerId)
             .lte("effective_from", dateTo)
-            .or(`effective_until.is.null,effective_until.gte.${dateFrom}`);
+            .or(`effective_to.is.null,effective_to.gte.${dateFrom}`);
 
         const { data: consultations } = await this.supabase
             .from("consultations")
@@ -447,18 +451,18 @@ export class SchedulingService {
             .gte("billing_invoices.created_at", dateFrom)
             .lte("billing_invoices.created_at", dateTo);
 
-        const serviceSplits = (splits || []).filter((s) => s.service_type);
+        const serviceSplits = (splits || []).filter((s) => s.split_type);
         let totalEarnings = 0;
         const earningsBreakdown = [];
 
         const consultationCount = (consultations || []).length;
-        const consultationSplit = serviceSplits.find((s) => s.service_type === "consultation");
+        const consultationSplit = serviceSplits.find((s) => s.consultation_split > 0 || s.consultation_fixed > 0);
         if (consultationSplit && consultationCount > 0) {
             let consultationEarnings;
-            if (consultationSplit.fixed_amount) {
-                consultationEarnings = consultationCount * parseFloat(consultationSplit.fixed_amount);
+            if (consultationSplit.split_type === "fixed" && consultationSplit.consultation_fixed > 0) {
+                consultationEarnings = consultationCount * parseFloat(consultationSplit.consultation_fixed);
             } else {
-                consultationEarnings = consultationCount * parseFloat(consultationSplit.split_percentage || 0);
+                consultationEarnings = consultationCount * parseFloat(consultationSplit.consultation_split || 0);
             }
             totalEarnings += consultationEarnings;
             earningsBreakdown.push({
@@ -468,14 +472,14 @@ export class SchedulingService {
             });
         }
 
-        const procedureSplit = serviceSplits.find((s) => s.service_type === "procedure");
+        const procedureSplit = serviceSplits.find((s) => s.procedure_split > 0 || s.procedure_fixed > 0);
         if (procedureSplit) {
             const totalProcedures = (procedures || []).reduce((sum, p) => sum + parseFloat(p.total || 0), 0);
             let procedureEarnings;
-            if (procedureSplit.fixed_amount) {
-                procedureEarnings = (procedures || []).length * parseFloat(procedureSplit.fixed_amount);
+            if (procedureSplit.split_type === "fixed" && procedureSplit.procedure_fixed > 0) {
+                procedureEarnings = (procedures || []).length * parseFloat(procedureSplit.procedure_fixed);
             } else {
-                procedureEarnings = totalProcedures * (parseFloat(procedureSplit.split_percentage || 0) / 100);
+                procedureEarnings = totalProcedures * (parseFloat(procedureSplit.procedure_split || 0) / 100);
             }
             totalEarnings += procedureEarnings;
             earningsBreakdown.push({

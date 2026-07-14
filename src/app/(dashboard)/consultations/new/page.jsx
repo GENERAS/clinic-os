@@ -63,7 +63,7 @@ export default function NewConsultationPage() {
         try {
             const id = await consultService.createConsultation(clinicId, data, diagnoses, prescriptions, investigations, user.id, radiologyOrders);
             if (triageData?.id) {
-                await triageService.updateTriageStatus(clinicId, triageData.id, "completed", id);
+                await triageService.updateTriageStatus(clinicId, triageData.id, "in_consultation", id);
             }
             toast.success("Consultation saved as draft");
             navigate(`/consultations/${id}`);
@@ -86,11 +86,13 @@ export default function NewConsultationPage() {
             if (triageData?.id) {
                 await triageService.updateTriageStatus(clinicId, triageData.id, "completed", id);
             }
-            await consultService.supabase
-                .from("appointments")
-                .update({ status: "completed" })
-                .eq("id", appointmentId)
-                .eq("clinic_id", clinicId);
+            if (appointmentId) {
+                await consultService.supabase
+                    .from("appointments")
+                    .update({ status: "completed" })
+                    .eq("id", appointmentId)
+                    .eq("clinic_id", clinicId);
+            }
             toast.success("Consultation completed");
             navigate(`/consultations/${id}`);
         } catch (err) {
@@ -138,7 +140,7 @@ export default function NewConsultationPage() {
 
             <ConsultationForm
                 patient={patient}
-                doctorName={user?.full_name || "Doctor"}
+                doctorName={user?.fullName || user?.full_name || "Doctor"}
                 initialData={{
                     appointment_id: appointmentId,
                     chief_complaint: triageData?.chief_complaint || "",

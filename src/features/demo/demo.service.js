@@ -23,7 +23,7 @@ export function getDemoService() {
       });
       if (clinicError || !clinicId) throw clinicError || new Error("Failed to create clinic");
 
-      await supabase.from("clinics").update({ metadata: { is_demo: true, created_by: userId } }).eq("id", clinicId);
+      await supabase.from("clinics").update({ description: "Demo clinic created for testing" }).eq("id", clinicId);
 
       const patientIds = [];
       for (const p of DEMO_PATIENTS) {
@@ -55,14 +55,13 @@ export function getDemoService() {
     },
 
     isDemoClinic(clinic) {
-      return clinic?.metadata?.is_demo === true;
+      return clinic?.description?.includes("Demo") === true;
     },
 
     async convertDemoToReal(clinicId, { name, phone }) {
       await supabase.from("clinics").update({
         name,
         phone,
-        metadata: { is_demo: false },
       }).eq("id", clinicId);
     },
 
