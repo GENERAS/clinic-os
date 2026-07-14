@@ -33,7 +33,7 @@ export default function TaxSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   const [settings, setSettings] = useState(null);
-  const [form, setForm] = useState({ tin_number: "", business_name: "", ebm_serial: "", tax_rate: "18", default_tax_class: "D" });
+  const [form, setForm] = useState({ tin_number: "", business_name: "", ebm_serial_number: "", tax_rate: "18", default_tax_class: "D" });
   const [ebmConnected, setEbmConnected] = useState(false);
 
   const [receipts, setReceipts] = useState([]);
@@ -57,11 +57,11 @@ export default function TaxSettingsPage() {
         setForm({
           tin_number: data.tin_number || "",
           business_name: data.business_name || "",
-          ebm_serial: data.ebm_serial || "",
+          ebm_serial_number: data.ebm_serial_number || "",
           tax_rate: data.tax_rate?.toString() || "18",
           default_tax_class: data.default_tax_class || "D",
         });
-        setEbmConnected(!!data.ebm_serial);
+        setEbmConnected(!!data.ebm_serial_number);
       }
     } catch (err) {
       toast.error(handleApiError(err, "Failed to load tax settings"));
@@ -111,11 +111,11 @@ export default function TaxSettingsPage() {
       await service.upsertTaxSettings(clinicId, {
         tin_number: form.tin_number || null,
         business_name: form.business_name || null,
-        ebm_serial: form.ebm_serial || null,
+        ebm_serial_number: form.ebm_serial_number || null,
         tax_rate: parseFloat(form.tax_rate) || 18,
         default_tax_class: form.default_tax_class || "D",
       });
-      setEbmConnected(!!form.ebm_serial);
+      setEbmConnected(!!form.ebm_serial_number);
       toast.success("Tax settings saved");
       loadSettings();
     } catch (err) {
@@ -175,7 +175,7 @@ export default function TaxSettingsPage() {
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase">EBM Serial Number</label>
-                <input value={form.ebm_serial} onChange={e => setForm(prev => ({ ...prev, ebm_serial: e.target.value }))}
+                <input value={form.ebm_serial_number} onChange={e => setForm(prev => ({ ...prev, ebm_serial_number: e.target.value }))}
                   className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="EBM-XXXXXX" />
               </div>
@@ -263,15 +263,15 @@ export default function TaxSettingsPage() {
                         <td className="px-4 py-3 text-xs font-semibold">{receipt.fiscal_number}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">{receipt.billing_invoices?.invoice_number || "—"}</td>
                         <td className="px-4 py-3 text-xs">{receipt.billing_invoices?.patients?.full_name || "—"}</td>
-                        <td className="px-4 py-3 text-xs font-medium text-right">{FORMAT_CURRENCY(receipt.rra_payload?.total)}</td>
-                        <td className="px-4 py-3 text-xs text-right">{FORMAT_CURRENCY(receipt.rra_payload?.total_tax)}</td>
+                        <td className="px-4 py-3 text-xs font-medium text-right">{FORMAT_CURRENCY(receipt.rra_response?.total || receipt.total_amount)}</td>
+                        <td className="px-4 py-3 text-xs text-right">{FORMAT_CURRENCY(receipt.rra_response?.total_tax || receipt.tax_amount)}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${RRA_STATUS_STYLES[receipt.rra_status] || "text-gray-600 bg-gray-50"}`}>
                             {receipt.rra_status}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-[10px] text-muted-foreground">
-                          {receipt.issued_at ? new Date(receipt.issued_at).toLocaleDateString("en-RW", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+                          {receipt.created_at ? new Date(receipt.created_at).toLocaleDateString("en-RW", { month: "short", day: "numeric", year: "numeric" }) : "—"}
                         </td>
                       </tr>
                     ))}

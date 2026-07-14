@@ -151,9 +151,11 @@ export class TaxService {
         invoice_id: invoiceId,
         fiscal_number: fiscalNumber,
         receipt_number: nextNumber,
-        rra_payload: fiscalPayload,
+        total_amount: data.total || 0,
+        tax_amount: data.total_tax || 0,
+        tax_class: data.tax_class || "D",
+        rra_response: fiscalPayload,
         rra_status: "validated",
-        issued_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -177,10 +179,10 @@ export class TaxService {
       .eq("clinic_id", clinicId);
 
     if (filters.rra_status) query = query.eq("rra_status", filters.rra_status);
-    if (filters.dateFrom) query = query.gte("issued_at", filters.dateFrom);
-    if (filters.dateTo) query = query.lte("issued_at", filters.dateTo);
+    if (filters.dateFrom) query = query.gte("created_at", filters.dateFrom);
+    if (filters.dateTo) query = query.lte("created_at", filters.dateTo);
 
-    const { data, error } = await query.order("issued_at", { ascending: false });
+    const { data, error } = await query.order("created_at", { ascending: false });
     if (error) throw error;
     return data || [];
   }
@@ -199,18 +201,18 @@ export class TaxService {
   async getTaxReport(clinicId, dateFrom, dateTo) {
     const { data: receipts, error } = await this.supabase
       .from("fiscal_receipts")
-      .select("rra_payload, issued_at")
+      .select("rra_response, created_at, total_amount, tax_amount, tax_class")
       .eq("clinic_id", clinicId)
       .eq("rra_status", "validated")
-      .gte("issued_at", dateFrom)
-      .lte("issued_at", dateTo);
+      .gte("created_at", dateFrom)
+      .lte("created_at", dateTo);
     if (error) throw error;
 
     const byClass = {};
     let totalCollected = 0;
 
     for (const receipt of receipts || []) {
-      const payload = receipt.rra_payload;
+      const payload = receipt.rra_response;
       if (!payload?.line_items) continue;
 
       for (const item of payload.line_items) {
