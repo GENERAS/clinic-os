@@ -253,7 +253,7 @@ function MissionOnePatient({ clinicId, onNext }) {
       const dob = form.age ? `${new Date().getFullYear() - Number(form.age)}-01-01` : null;
       const { error } = await supabase.rpc("create_patient", {
         p_clinic_id: clinicId, p_full_name: form.name, p_phone: patientPhone,
-        p_created_by: user?.id, p_date_of_birth: dob,
+        p_created_by: user?.id, p_date_of_birth: dob, p_gender: null, p_email: null,
       });
       if (error) throw error;
       toast.success("Patient added successfully");

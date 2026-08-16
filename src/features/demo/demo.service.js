@@ -29,7 +29,7 @@ export function getDemoService() {
       for (const p of DEMO_PATIENTS) {
         const { data: newId, error } = await supabase.rpc("create_patient", {
           p_clinic_id: clinicId, p_full_name: p.name, p_phone: p.phone,
-          p_created_by: userId,
+          p_created_by: userId, p_date_of_birth: null, p_gender: null, p_email: null,
         });
         if (!error && newId) patientIds.push(newId);
       }
