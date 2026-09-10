@@ -13,6 +13,7 @@ const SYSTEM_ERROR_PATTERNS = [
   /undefined is not/i,
   /Cannot read property/i,
   /Cannot read properties/i,
+  /aborted|AbortError|TimeoutError/i,
 ];
 
 function looksLikeSystemError(msg) {

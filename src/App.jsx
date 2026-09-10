@@ -45,6 +45,7 @@ const ClinicSettingsPage = lazy(() => import("@/app/(dashboard)/settings/clinic/
 const StaffPage = lazy(() => import("@/app/(dashboard)/settings/staff/page"));
 const StaffDetailPage = lazy(() => import("@/app/(dashboard)/settings/staff/[id]/page"));
 const WhatsAppSettingsPage = lazy(() => import("@/app/(dashboard)/settings/whatsapp/page"));
+const SmsSettingsPage = lazy(() => import("@/app/(dashboard)/settings/sms/page"));
 const WhatsAppPage = lazy(() => import("@/app/(dashboard)/whatsapp/page"));
 const SubscriptionPage = lazy(() => import("@/app/(dashboard)/subscription/page"));
 const InsurancePage = lazy(() => import("@/app/(dashboard)/insurance/page"));
@@ -170,6 +171,7 @@ export default function App() {
                 <Route path="/settings/staff" element={<StaffPage />}/>
                 <Route path="/settings/staff/:id" element={<StaffDetailPage />}/>
                 <Route path="/settings/whatsapp" element={<WhatsAppSettingsPage />}/>
+                <Route path="/settings/sms" element={<SmsSettingsPage />}/>
                 <Route path="/settings/tax" element={<TaxSettingsPage />}/>
                 <Route path="/settings/privacy" element={<PrivacyPage />}/>
                 <Route path="/whatsapp" element={<WhatsAppPage />}/>

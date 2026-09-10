@@ -4,7 +4,10 @@ let cachedClient = null;
 
 function fetchWithTimeout(url, options) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+    const timer = setTimeout(
+        () => controller.abort(new DOMException("Request timed out. Please try again.", "TimeoutError")),
+        30000
+    );
     return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 

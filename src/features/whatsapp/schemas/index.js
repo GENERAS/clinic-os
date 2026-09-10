@@ -2,6 +2,8 @@ import { z } from "zod";
 export const reminderSettingsSchema = z.object({
     whatsapp_reminders_enabled: z.boolean(),
     reminder_hours_before: z.number().int().positive("Must be a positive number"),
+    sms_reminders_enabled: z.boolean(),
+    sms_reminder_hours_before: z.number().int().positive("Must be a positive number"),
 });
 export const templateSchema = z.object({
     name: z.string().min(1, "Name is required").max(200),

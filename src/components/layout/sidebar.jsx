@@ -6,7 +6,7 @@ import {
   Bell, User, Settings, Hospital, LogOut, Calendar, UserCog,
   Shield, CreditCard, Stethoscope, Heart, Beaker, DollarSign, Pill, TrendingUp,
   FileCheck, Receipt, ClipboardCheck, CalendarRange, Lock, Database,
-  BedDouble, ArrowRightLeft, Scissors, ClipboardList, Banknote, Camera
+  BedDouble, ArrowRightLeft, Scissors, ClipboardList, Banknote, Camera, MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 
@@ -99,6 +99,7 @@ export function Sidebar({ isOpen, onClose }) {
         <NavSection label="Communication">
           <NavItem item={{ href: "/notifications", label: "Notifications", icon: Bell }} onClose={onClose} />
           <NavItem item={{ href: "/whatsapp", label: "WhatsApp", icon: MessageCircle }} onClose={onClose} />
+          <NavItem item={{ href: "/settings/sms", label: "SMS", icon: MessageSquare }} onClose={onClose} />
         </NavSection>
 
         <NavSection label="Compliance & Quality">

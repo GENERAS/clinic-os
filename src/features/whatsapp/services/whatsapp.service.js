@@ -244,7 +244,7 @@ export function getWhatsAppService() {
         async getReminderSettings(clinicId) {
             const { data, error } = await supabase
                 .from("clinic_notification_settings")
-                .select("whatsapp_reminders_enabled, reminder_hours_before")
+                .select("whatsapp_reminders_enabled, reminder_hours_before, sms_reminders_enabled, sms_reminder_hours_before")
                 .eq("clinic_id", clinicId)
                 .single();
             if (error) return null;
