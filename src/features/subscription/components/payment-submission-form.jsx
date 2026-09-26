@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { paymentSubmissionSchema, toFieldErrors } from "@/features/billing/schemas/billing.schema";
 
 export function PaymentSubmissionForm({ methods, instructions, subscription, onBack, onSubmit }) {
   const [method, setMethod] = useState(methods[0]?.slug || "");
@@ -11,24 +12,35 @@ export function PaymentSubmissionForm({ methods, instructions, subscription, onB
   const [payerPhone, setPayerPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const selectedMethod = methods.find((m) => m.slug === method);
   const methodInstructions = instructions[method] || selectedMethod?.instructions || "";
 
+  const clearError = (key) => setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!transactionRef || !amount) {
-      toast.error("Transaction reference and amount are required");
+    const parsed = paymentSubmissionSchema.safeParse({
+      payment_method: method,
+      transaction_reference: transactionRef,
+      amount,
+      payer_name: payerName,
+      payer_phone: payerPhone,
+    });
+    if (!parsed.success) {
+      setErrors(toFieldErrors(parsed.error));
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       await onSubmit({
-        payment_method: method,
-        transaction_reference: transactionRef,
-        payer_name: payerName,
-        payer_phone: payerPhone,
-        amount: parseFloat(amount),
+        payment_method: parsed.data.payment_method,
+        transaction_reference: parsed.data.transaction_reference,
+        payer_name: parsed.data.payer_name || null,
+        payer_phone: parsed.data.payer_phone || null,
+        amount: parsed.data.amount,
       });
       toast.success("Payment submitted for verification");
     } catch (err) {
@@ -46,7 +58,7 @@ export function PaymentSubmissionForm({ methods, instructions, subscription, onB
         <pre className="whitespace-pre-wrap text-xs text-slate-600 font-sans">{methodInstructions}</pre>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
           <label className="text-xs font-medium text-slate-700">Payment Method</label>
           <div className="mt-1 grid grid-cols-2 gap-2">
@@ -65,6 +77,7 @@ export function PaymentSubmissionForm({ methods, instructions, subscription, onB
               </button>
             ))}
           </div>
+          {errors.payment_method && <p className="mt-1 text-xs text-destructive">{errors.payment_method}</p>}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -72,27 +85,33 @@ export function PaymentSubmissionForm({ methods, instructions, subscription, onB
             <label className="text-xs font-medium text-slate-700">Transaction Reference *</label>
             <input
               type="text" value={transactionRef}
-              onChange={(e) => setTransactionRef(e.target.value)}
+              onChange={(e) => { clearError("transaction_reference"); setTransactionRef(e.target.value); }}
+              maxLength={100}
               placeholder="e.g. MTN-1234567890"
-              className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-              required
+              aria-invalid={errors.transaction_reference ? "true" : undefined}
+              className={`mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 ${errors.transaction_reference ? "border-red-400" : "border-slate-200"}`}
             />
+            {errors.transaction_reference && <p className="mt-1 text-xs text-destructive">{errors.transaction_reference}</p>}
           </div>
           <div>
             <label className="text-xs font-medium text-slate-700">Amount (RWF) *</label>
             <input
               type="number" value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              inputMode="decimal"
+              min="0" step="any"
+              onChange={(e) => { clearError("amount"); setAmount(e.target.value); }}
               placeholder="25000"
-              className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
-              required
+              aria-invalid={errors.amount ? "true" : undefined}
+              className={`mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 ${errors.amount ? "border-red-400" : "border-slate-200"}`}
             />
+            {errors.amount && <p className="mt-1 text-xs text-destructive">{errors.amount}</p>}
           </div>
           <div>
             <label className="text-xs font-medium text-slate-700">Payer Name</label>
             <input
               type="text" value={payerName}
               onChange={(e) => setPayerName(e.target.value)}
+              maxLength={200}
               placeholder="Jean Pierre"
               className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
             />
@@ -101,10 +120,13 @@ export function PaymentSubmissionForm({ methods, instructions, subscription, onB
             <label className="text-xs font-medium text-slate-700">Phone Number</label>
             <input
               type="tel" value={payerPhone}
-              onChange={(e) => setPayerPhone(e.target.value)}
+              onChange={(e) => { clearError("payer_phone"); setPayerPhone(e.target.value); }}
+              maxLength={20}
               placeholder="0788 123 456"
-              className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
+              aria-invalid={errors.payer_phone ? "true" : undefined}
+              className={`mt-1 block w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 ${errors.payer_phone ? "border-red-400" : "border-slate-200"}`}
             />
+            {errors.payer_phone && <p className="mt-1 text-xs text-destructive">{errors.payer_phone}</p>}
           </div>
         </div>
 

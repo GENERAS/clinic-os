@@ -6,6 +6,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getTaxService, TAX_CLASSES } from "@/features/tax/services/tax.service";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { taxSettingsSchema, toFieldErrors } from "@/features/billing/schemas/billing.schema";
 
 const RRA_STATUS_STYLES = {
   validated: "text-emerald-600 bg-emerald-50",
@@ -31,6 +32,7 @@ export default function TaxSettingsPage() {
   const [activeTab, setActiveTab] = useState("rra");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState({ tin_number: "", business_name: "", ebm_serial_number: "", tax_rate: "18", default_tax_class: "D" });
@@ -106,16 +108,29 @@ export default function TaxSettingsPage() {
 
   const handleSaveSettings = useCallback(async () => {
     if (!clinicId) return;
+    const parsed = taxSettingsSchema.safeParse({
+      tin_number: form.tin_number || "",
+      business_name: form.business_name || "",
+      ebm_serial_number: form.ebm_serial_number || "",
+      tax_rate: form.tax_rate,
+      default_tax_class: form.default_tax_class || "D",
+    });
+    if (!parsed.success) {
+      setErrors(toFieldErrors(parsed.error));
+      toast.error("Please correct the highlighted fields");
+      return;
+    }
+    setErrors({});
     setSaving(true);
     try {
       await service.upsertTaxSettings(clinicId, {
-        tin_number: form.tin_number || null,
-        business_name: form.business_name || null,
-        ebm_serial_number: form.ebm_serial_number || null,
-        tax_rate: parseFloat(form.tax_rate) || 18,
-        default_tax_class: form.default_tax_class || "D",
+        tin_number: parsed.data.tin_number || null,
+        business_name: parsed.data.business_name || null,
+        ebm_serial_number: parsed.data.ebm_serial_number || null,
+        tax_rate: parsed.data.tax_rate,
+        default_tax_class: parsed.data.default_tax_class,
       });
-      setEbmConnected(!!form.ebm_serial_number);
+      setEbmConnected(!!parsed.data.ebm_serial_number);
       toast.success("Tax settings saved");
       loadSettings();
     } catch (err) {
@@ -163,26 +178,34 @@ export default function TaxSettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase">TIN Number</label>
-                <input value={form.tin_number} onChange={e => setForm(prev => ({ ...prev, tin_number: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                <input value={form.tin_number} onChange={e => { setErrors(p => ({ ...p, tin_number: undefined })); setForm(prev => ({ ...prev, tin_number: e.target.value })); }}
+                  maxLength={9} inputMode="numeric"
+                  aria-invalid={errors.tin_number ? "true" : undefined}
+                  className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 ${errors.tin_number ? "border-red-400" : ""}`}
                   placeholder="123456789" />
+                {errors.tin_number && <p className="mt-1 text-xs text-destructive">{errors.tin_number}</p>}
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase">Business Name</label>
                 <input value={form.business_name} onChange={e => setForm(prev => ({ ...prev, business_name: e.target.value }))}
+                  maxLength={200}
                   className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="Clinic Name" />
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase">EBM Serial Number</label>
                 <input value={form.ebm_serial_number} onChange={e => setForm(prev => ({ ...prev, ebm_serial_number: e.target.value }))}
+                  maxLength={100}
                   className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="EBM-XXXXXX" />
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase">Default Tax Rate (%)</label>
-                <input type="number" min="0" max="100" value={form.tax_rate} onChange={e => setForm(prev => ({ ...prev, tax_rate: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+                <input type="number" min="0" max="100" step="any" value={form.tax_rate}
+                  onChange={e => { setErrors(p => ({ ...p, tax_rate: undefined })); setForm(prev => ({ ...prev, tax_rate: e.target.value })); }}
+                  aria-invalid={errors.tax_rate ? "true" : undefined}
+                  className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 ${errors.tax_rate ? "border-red-400" : ""}`} />
+                {errors.tax_rate && <p className="mt-1 text-xs text-destructive">{errors.tax_rate}</p>}
               </div>
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase">Default Tax Class</label>

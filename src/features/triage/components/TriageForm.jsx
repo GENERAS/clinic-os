@@ -1,6 +1,8 @@
 "use client";
-import { useCallback, useState } from "react";
-import { Loader2, Heart, AlertTriangle, Pill, Stethoscope, Activity, Thermometer, Weight, Ruler, Baby } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Loader2, Heart, AlertTriangle, Pill, Stethoscope, Activity, Thermometer, Weight, Ruler } from "lucide-react";
+import { VITAL_RANGES, computeBmi } from "@/lib/validation";
+import { validateTriage, triageVitalPayload } from "@/features/triage/schemas/triage.schema";
 
 const URGENCY_OPTIONS = [
     { value: "emergency", label: "Emergency", color: "text-red-600 bg-red-50 border-red-200" },
@@ -9,24 +11,47 @@ const URGENCY_OPTIONS = [
     { value: "non_urgent", label: "Non-Urgent", color: "text-gray-600 bg-gray-50 border-gray-200" },
 ];
 
-function VitalInput({ icon: Icon, label, value, onChange, unit, type = "number", step = "0.1" }) {
+const VITAL_FIELDS = [
+    { key: "systolic_bp", icon: Activity },
+    { key: "diastolic_bp", icon: Activity },
+    { key: "heart_rate", icon: Heart },
+    { key: "temperature", icon: Thermometer },
+    { key: "respiratory_rate", icon: Stethoscope },
+    { key: "oxygen_saturation", icon: Activity },
+    { key: "weight", icon: Weight },
+    { key: "height", icon: Ruler },
+];
+
+function VitalInput({ icon: Icon, label, value, onChange, unit, error, step = "0.1", min, max }) {
     return (
-        <div className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
-            <Icon className="size-4 shrink-0 text-muted-foreground" />
-            <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-                <div className="flex items-center gap-1">
-                    <input
-                        type={type}
-                        step={step}
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        className="w-full bg-transparent text-sm font-semibold outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        placeholder="--"
-                    />
-                    {unit && <span className="text-[10px] text-muted-foreground shrink-0">{unit}</span>}
+        <div>
+            <div
+                className={`flex items-center gap-2 rounded-lg border bg-white px-3 py-2 ${
+                    error ? "border-red-400" : "border-input"
+                }`}
+            >
+                <Icon className="size-4 shrink-0 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            inputMode="decimal"
+                            step={step}
+                            min={min}
+                            max={max}
+                            value={value}
+                            onChange={(e) => onChange(e.target.value)}
+                            aria-label={label}
+                            aria-invalid={error ? "true" : undefined}
+                            className="w-full bg-transparent text-sm font-semibold outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            placeholder="--"
+                        />
+                        {unit && <span className="text-[10px] text-muted-foreground shrink-0">{unit}</span>}
+                    </div>
                 </div>
             </div>
+            {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
         </div>
     );
 }
@@ -41,63 +66,76 @@ export function TriageForm({ patient, onSave, onCancel, saving }) {
     const [currentMeds, setCurrentMeds] = useState("");
     const [urgency, setUrgency] = useState("routine");
     const [triageNote, setTriageNote] = useState("");
+    const [errors, setErrors] = useState({});
 
     const updateVital = useCallback((key) => (val) => {
-        setVitals(prev => ({ ...prev, [key]: val }));
+        setVitals((prev) => ({ ...prev, [key]: val }));
+        setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
     }, []);
 
-    const bmi = vitals.weight && vitals.height
-        ? (parseFloat(vitals.weight) / ((parseFloat(vitals.height) / 100) ** 2)).toFixed(1)
-        : null;
+    const bmi = useMemo(
+        () => computeBmi(parseFloat(vitals.weight), parseFloat(vitals.height)),
+        [vitals.weight, vitals.height]
+    );
 
-    const handleSubmit = useCallback((e) => {
-        e.preventDefault();
-        onSave({
-            patient_id: patient.id,
-            appointment_id: patient.appointment_id || null,
-            chief_complaint: chiefComplaint,
-            vital_signs: {
-                systolic_bp: vitals.systolic_bp ? parseFloat(vitals.systolic_bp) : null,
-                diastolic_bp: vitals.diastolic_bp ? parseFloat(vitals.diastolic_bp) : null,
-                heart_rate: vitals.heart_rate ? parseFloat(vitals.heart_rate) : null,
-                temperature: vitals.temperature ? parseFloat(vitals.temperature) : null,
-                respiratory_rate: vitals.respiratory_rate ? parseFloat(vitals.respiratory_rate) : null,
-                oxygen_saturation: vitals.oxygen_saturation ? parseFloat(vitals.oxygen_saturation) : null,
-                weight: vitals.weight ? parseFloat(vitals.weight) : null,
-                height: vitals.height ? parseFloat(vitals.height) : null,
-                bmi: bmi ? parseFloat(bmi) : null,
-            },
-            allergies,
-            current_medications: currentMeds,
-            urgency_level: urgency,
-            triage_note: triageNote,
-        });
-    }, [patient, chiefComplaint, vitals, bmi, allergies, currentMeds, urgency, triageNote, onSave]);
+    const handleSubmit = useCallback(
+        (e) => {
+            e.preventDefault();
+            const result = validateTriage({ ...vitals, chief_complaint: chiefComplaint, urgency_level: urgency });
+            if (!result.ok) {
+                setErrors(result.errors);
+                return;
+            }
+            setErrors({});
+            onSave({
+                patient_id: patient.id,
+                appointment_id: patient.appointment_id || null,
+                chief_complaint: chiefComplaint,
+                vital_signs: triageVitalPayload(result.data),
+                allergies,
+                current_medications: currentMeds,
+                urgency_level: urgency,
+                triage_note: triageNote,
+            });
+        },
+        [patient, chiefComplaint, vitals, allergies, currentMeds, urgency, triageNote, onSave]
+    );
+
+    const hasErrors = Object.values(errors).some(Boolean);
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div className="rounded-xl border bg-white p-5">
                 <div className="mb-4 flex items-center gap-2">
                     <Heart className="size-4 text-rose-500" />
                     <h3 className="text-sm font-semibold">Vital Signs</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <VitalInput icon={Activity} label="Systolic BP" value={vitals.systolic_bp} onChange={updateVital("systolic_bp")} unit="mmHg" />
-                    <VitalInput icon={Activity} label="Diastolic BP" value={vitals.diastolic_bp} onChange={updateVital("diastolic_bp")} unit="mmHg" />
-                    <VitalInput icon={Heart} label="Heart Rate" value={vitals.heart_rate} onChange={updateVital("heart_rate")} unit="bpm" />
-                    <VitalInput icon={Thermometer} label="Temperature" value={vitals.temperature} onChange={updateVital("temperature")} unit="°C" />
-                    <VitalInput icon={Stethoscope} label="Respiratory Rate" value={vitals.respiratory_rate} onChange={updateVital("respiratory_rate")} unit="bpm" />
-                    <VitalInput icon={Activity} label="O2 Saturation" value={vitals.oxygen_saturation} onChange={updateVital("oxygen_saturation")} unit="%" />
-                    <VitalInput icon={Weight} label="Weight" value={vitals.weight} onChange={updateVital("weight")} unit="kg" />
-                    <VitalInput icon={Ruler} label="Height" value={vitals.height} onChange={updateVital("height")} unit="cm" />
+                    {VITAL_FIELDS.map(({ key, icon }) => {
+                        const range = VITAL_RANGES[key];
+                        return (
+                            <VitalInput
+                                key={key}
+                                icon={icon}
+                                label={range.label}
+                                unit={range.unit}
+                                step={String(range.step)}
+                                min={range.min}
+                                max={range.max}
+                                value={vitals[key]}
+                                onChange={updateVital(key)}
+                                error={errors[key]}
+                            />
+                        );
+                    })}
                 </div>
-                {bmi && (
+                {bmi !== null && (
                     <p className="mt-2 text-xs text-muted-foreground">
                         BMI: <span className="font-semibold">{bmi}</span>
-                        {parseFloat(bmi) < 18.5 && " (Underweight)"}
-                        {parseFloat(bmi) >= 18.5 && parseFloat(bmi) < 25 && " (Normal)"}
-                        {parseFloat(bmi) >= 25 && parseFloat(bmi) < 30 && " (Overweight)"}
-                        {parseFloat(bmi) >= 30 && " (Obese)"}
+                        {bmi < 18.5 && " (Underweight)"}
+                        {bmi >= 18.5 && bmi < 25 && " (Normal)"}
+                        {bmi >= 25 && bmi < 30 && " (Overweight)"}
+                        {bmi >= 30 && " (Obese)"}
                     </p>
                 )}
             </div>
@@ -113,6 +151,7 @@ export function TriageForm({ patient, onSave, onCancel, saving }) {
                         <textarea
                             value={chiefComplaint}
                             onChange={(e) => setChiefComplaint(e.target.value)}
+                            maxLength={2000}
                             rows={2}
                             className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                             placeholder="Patient's main reason for visit..."
@@ -145,6 +184,7 @@ export function TriageForm({ patient, onSave, onCancel, saving }) {
                             <textarea
                                 value={allergies}
                                 onChange={(e) => setAllergies(e.target.value)}
+                                maxLength={2000}
                                 rows={2}
                                 className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                                 placeholder="Known allergies (drugs, food, etc.)"
@@ -157,6 +197,7 @@ export function TriageForm({ patient, onSave, onCancel, saving }) {
                             <textarea
                                 value={currentMeds}
                                 onChange={(e) => setCurrentMeds(e.target.value)}
+                                maxLength={2000}
                                 rows={2}
                                 className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                                 placeholder="Current medications the patient is taking"
@@ -169,6 +210,7 @@ export function TriageForm({ patient, onSave, onCancel, saving }) {
                         <textarea
                             value={triageNote}
                             onChange={(e) => setTriageNote(e.target.value)}
+                            maxLength={2000}
                             rows={2}
                             className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                             placeholder="Additional observations..."
@@ -176,6 +218,12 @@ export function TriageForm({ patient, onSave, onCancel, saving }) {
                     </div>
                 </div>
             </div>
+
+            {hasErrors && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-destructive">
+                    Please correct the highlighted vital sign values.
+                </p>
+            )}
 
             <div className="flex items-center justify-end gap-2">
                 <button type="button" onClick={onCancel} className="rounded-lg border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">

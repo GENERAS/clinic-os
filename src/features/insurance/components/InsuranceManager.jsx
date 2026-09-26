@@ -67,15 +67,27 @@ export function InsuranceManager({ service, clinicId, patientId, onUpdate }) {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!form.provider || !form.policy_number) {
+    if (!clinicId) return;
+    const annualLimit = form.annual_limit === "" ? 0 : Number(form.annual_limit);
+    if (!Number.isFinite(annualLimit) || annualLimit < 0) {
+      toast.error("Annual limit must be zero or more");
+      return;
+    }
+    if (!form.provider || !form.provider.trim() || !form.policy_number || !form.policy_number.trim()) {
       toast.error("Provider and policy number are required");
+      return;
+    }
+    if (form.valid_from && form.valid_until && form.valid_until < form.valid_from) {
+      toast.error("Valid-until date must be on or after the valid-from date");
       return;
     }
     setSaving(true);
     try {
       const data = {
         ...form,
-        annual_limit: parseFloat(form.annual_limit) || 0,
+        provider: form.provider.trim(),
+        policy_number: form.policy_number.trim(),
+        annual_limit: annualLimit,
         valid_from: form.valid_from || null,
         valid_until: form.valid_until || null,
       };

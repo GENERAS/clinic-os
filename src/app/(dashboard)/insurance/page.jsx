@@ -9,6 +9,7 @@ import { PreAuthQueue } from "@/features/insurance/components/PreAuthQueue";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { insurancePlanSchema, insuranceClaimSchema, toFieldErrors } from "@/features/billing/schemas/billing.schema";
 
 const STATUS_STYLES = {
   active: "text-emerald-600 bg-emerald-50",
@@ -68,6 +69,8 @@ export default function InsurancePage() {
   const [providerFilter, setProviderFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [saving, setSaving] = useState(false);
+  const [planErrors, setPlanErrors] = useState({});
+  const [claimErrors, setClaimErrors] = useState({});
 
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
@@ -164,18 +167,23 @@ export default function InsurancePage() {
   }, [claims, claimStatusFilter]);
 
   const handleSavePlan = useCallback(async () => {
-    if (!clinicId || !planForm.provider || !planForm.plan_name) {
-      toast.error("Provider and plan name are required");
+    if (!clinicId) return;
+    const parsed = insurancePlanSchema.safeParse(planForm);
+    if (!parsed.success) {
+      setPlanErrors(toFieldErrors(parsed.error));
+      toast.error("Please correct the highlighted fields");
       return;
     }
+    setPlanErrors({});
     setSaving(true);
     try {
       const payload = {
-        provider: planForm.provider,
-        plan_name: planForm.plan_name,
-        annual_limit: parseFloat(planForm.annual_limit) || 0,
-        pre_auth_required_above: parseFloat(planForm.pre_auth_required_above) || 0,
-        coverage_type: parseFloat(planForm.coverage_type) || 80,
+        provider: parsed.data.provider,
+        plan_name: parsed.data.plan_name,
+        annual_limit: parsed.data.annual_limit === "" || parsed.data.annual_limit === undefined ? 0 : parsed.data.annual_limit,
+        pre_auth_required_above: parsed.data.pre_auth_required_above === "" || parsed.data.pre_auth_required_above === undefined ? 0 : parsed.data.pre_auth_required_above,
+        coverage_type: parsed.data.coverage_type,
+        ...(parsed.data.description ? { description: parsed.data.description } : {}),
       };
       if (editingPlan) {
         await service.updateInsurancePlan(clinicId, editingPlan.id, payload);
@@ -253,21 +261,26 @@ export default function InsurancePage() {
   }, [patientInvoices]);
 
   const handleCreateClaim = useCallback(async () => {
-    if (!clinicId || !claimForm.patient_id || !claimForm.invoice_id) {
-      toast.error("Patient and invoice are required");
+    if (!clinicId) return;
+    const parsed = insuranceClaimSchema.safeParse(claimForm);
+    if (!parsed.success) {
+      setClaimErrors(toFieldErrors(parsed.error));
+      toast.error("Please correct the highlighted fields");
       return;
     }
+    setClaimErrors({});
     setSaving(true);
     try {
+      const blankToZero = (v) => (v === "" || v === undefined || v === null ? 0 : v);
       await service.createClaim(clinicId, {
-        patient_id: claimForm.patient_id,
-        invoice_id: claimForm.invoice_id,
-        provider: claimForm.provider,
-        policy_number: claimForm.policy_number,
-        total_amount: parseFloat(claimForm.total_amount) || 0,
-        covered_amount: parseFloat(claimForm.covered_amount) || 0,
-        co_pay_amount: parseFloat(claimForm.co_pay_amount) || 0,
-        notes: claimForm.notes,
+        patient_id: parsed.data.patient_id,
+        invoice_id: parsed.data.invoice_id,
+        provider: parsed.data.provider,
+        policy_number: parsed.data.policy_number,
+        total_amount: blankToZero(parsed.data.total_amount),
+        covered_amount: blankToZero(parsed.data.covered_amount),
+        co_pay_amount: blankToZero(parsed.data.co_pay_amount),
+        notes: parsed.data.notes,
       }, user?.id);
       toast.success("Claim created");
       setShowCreateClaim(false);
@@ -427,24 +440,44 @@ export default function InsurancePage() {
                   </select>
                 </div>
                 <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase">Provider *</label>
+                  <input value={planForm.provider} onChange={e => { setPlanErrors(p => ({ ...p, provider: undefined })); setPlanForm(prev => ({ ...prev, provider: e.target.value })); }}
+                    maxLength={200}
+                    aria-invalid={planErrors.provider ? "true" : undefined}
+                    className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${planErrors.provider ? "border-red-400" : ""}`} />
+                  {planErrors.provider && <p className="mt-1 text-xs text-destructive">{planErrors.provider}</p>}
+                </div>
+                <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase">Plan Name *</label>
-                  <input value={planForm.plan_name} onChange={e => setPlanForm(prev => ({ ...prev, plan_name: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. Gold Plus" />
+                  <input value={planForm.plan_name} onChange={e => { setPlanErrors(p => ({ ...p, plan_name: undefined })); setPlanForm(prev => ({ ...prev, plan_name: e.target.value })); }}
+                    maxLength={200}
+                    aria-invalid={planErrors.plan_name ? "true" : undefined}
+                    className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${planErrors.plan_name ? "border-red-400" : ""}`} placeholder="e.g. Gold Plus" />
+                  {planErrors.plan_name && <p className="mt-1 text-xs text-destructive">{planErrors.plan_name}</p>}
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase">Annual Limit (RWF)</label>
-                  <input type="number" value={planForm.annual_limit} onChange={e => setPlanForm(prev => ({ ...prev, annual_limit: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" placeholder="0" />
+                  <input type="number" inputMode="decimal" min="0" step="any" value={planForm.annual_limit}
+                    onChange={e => { setPlanErrors(p => ({ ...p, annual_limit: undefined })); setPlanForm(prev => ({ ...prev, annual_limit: e.target.value })); }}
+                    aria-invalid={planErrors.annual_limit ? "true" : undefined}
+                    className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${planErrors.annual_limit ? "border-red-400" : ""}`} placeholder="0" />
+                  {planErrors.annual_limit && <p className="mt-1 text-xs text-destructive">{planErrors.annual_limit}</p>}
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase">Pre-Auth Threshold (RWF)</label>
-                  <input type="number" value={planForm.pre_auth_required_above} onChange={e => setPlanForm(prev => ({ ...prev, pre_auth_required_above: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" placeholder="0" />
+                  <input type="number" inputMode="decimal" min="0" step="any" value={planForm.pre_auth_required_above}
+                    onChange={e => { setPlanErrors(p => ({ ...p, pre_auth_required_above: undefined })); setPlanForm(prev => ({ ...prev, pre_auth_required_above: e.target.value })); }}
+                    aria-invalid={planErrors.pre_auth_required_above ? "true" : undefined}
+                    className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${planErrors.pre_auth_required_above ? "border-red-400" : ""}`} placeholder="0" />
+                  {planErrors.pre_auth_required_above && <p className="mt-1 text-xs text-destructive">{planErrors.pre_auth_required_above}</p>}
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase">Coverage %</label>
-                  <input type="number" min="0" max="100" value={planForm.coverage_type} onChange={e => setPlanForm(prev => ({ ...prev, coverage_type: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" />
+                  <input type="number" inputMode="decimal" min="0" max="100" step="any" value={planForm.coverage_type}
+                    onChange={e => { setPlanErrors(p => ({ ...p, coverage_type: undefined })); setPlanForm(prev => ({ ...prev, coverage_type: e.target.value })); }}
+                    aria-invalid={planErrors.coverage_type ? "true" : undefined}
+                    className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${planErrors.coverage_type ? "border-red-400" : ""}`} />
+                  {planErrors.coverage_type && <p className="mt-1 text-xs text-destructive">{planErrors.coverage_type}</p>}
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase">Description</label>
@@ -591,18 +624,27 @@ export default function InsurancePage() {
                     </div>
                     <div>
                       <label className="text-[10px] font-medium text-muted-foreground uppercase">Total Amount (RWF)</label>
-                      <input type="number" value={claimForm.total_amount} onChange={e => setClaimForm(prev => ({ ...prev, total_amount: e.target.value }))}
-                        className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" />
+                      <input type="number" inputMode="decimal" min="0" step="any" value={claimForm.total_amount}
+                        onChange={e => { setClaimErrors(p => ({ ...p, total_amount: undefined })); setClaimForm(prev => ({ ...prev, total_amount: e.target.value })); }}
+                        aria-invalid={claimErrors.total_amount ? "true" : undefined}
+                        className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${claimErrors.total_amount ? "border-red-400" : ""}`} />
+                      {claimErrors.total_amount && <p className="mt-1 text-xs text-destructive">{claimErrors.total_amount}</p>}
                     </div>
                     <div>
                       <label className="text-[10px] font-medium text-muted-foreground uppercase">Covered Amount (RWF)</label>
-                      <input type="number" value={claimForm.covered_amount} onChange={e => setClaimForm(prev => ({ ...prev, covered_amount: e.target.value }))}
-                        className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" />
+                      <input type="number" inputMode="decimal" min="0" step="any" value={claimForm.covered_amount}
+                        onChange={e => { setClaimErrors(p => ({ ...p, covered_amount: undefined })); setClaimForm(prev => ({ ...prev, covered_amount: e.target.value })); }}
+                        aria-invalid={claimErrors.covered_amount ? "true" : undefined}
+                        className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${claimErrors.covered_amount ? "border-red-400" : ""}`} />
+                      {claimErrors.covered_amount && <p className="mt-1 text-xs text-destructive">{claimErrors.covered_amount}</p>}
                     </div>
                     <div>
                       <label className="text-[10px] font-medium text-muted-foreground uppercase">Co-pay Amount (RWF)</label>
-                      <input type="number" value={claimForm.co_pay_amount} onChange={e => setClaimForm(prev => ({ ...prev, co_pay_amount: e.target.value }))}
-                        className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" />
+                      <input type="number" inputMode="decimal" min="0" step="any" value={claimForm.co_pay_amount}
+                        onChange={e => { setClaimErrors(p => ({ ...p, co_pay_amount: undefined })); setClaimForm(prev => ({ ...prev, co_pay_amount: e.target.value })); }}
+                        aria-invalid={claimErrors.co_pay_amount ? "true" : undefined}
+                        className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${claimErrors.co_pay_amount ? "border-red-400" : ""}`} />
+                      {claimErrors.co_pay_amount && <p className="mt-1 text-xs text-destructive">{claimErrors.co_pay_amount}</p>}
                     </div>
                   </div>
                   <div>

@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getAdmissionService } from "@/features/admissions/services/admission.service";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { VITAL_RANGES } from "@/lib/validation";
 
 const VITAL_FIELDS = [
     { key: "systolic_bp", label: "Systolic BP", unit: "mmHg" },
@@ -44,6 +45,7 @@ export default function AdmissionDetailPage() {
 
     const [showVitalsForm, setShowVitalsForm] = useState(false);
     const [vitalsForm, setVitalsForm] = useState({});
+    const [vitalsErrors, setVitalsErrors] = useState({});
     const [vitalsNotes, setVitalsNotes] = useState("");
 
     const [showMedForm, setShowMedForm] = useState(false);
@@ -83,6 +85,34 @@ export default function AdmissionDetailPage() {
         if (!clinicId || !user || !id) return;
         const hasAny = Object.values(vitalsForm).some(v => v && v.toString().trim() !== "");
         if (!hasAny) { toast.error("Enter at least one vital sign"); return; }
+        const numericErrors = {};
+        for (const f of VITAL_FIELDS) {
+            const raw = vitalsForm[f.key];
+            if (raw === undefined || raw === null || String(raw).trim() === "") continue;
+            const num = Number(raw);
+            if (!Number.isFinite(num)) {
+                numericErrors[f.key] = `${f.label} must be a number`;
+                continue;
+            }
+            const range = VITAL_RANGES[f.key];
+            if (range && (num < range.min || num > range.max)) {
+                numericErrors[f.key] = `${range.label} must be between ${range.min} and ${range.max} ${range.unit}`;
+            }
+        }
+        const s = Number(vitalsForm.systolic_bp);
+        const d = Number(vitalsForm.diastolic_bp);
+        if (
+            !numericErrors.systolic_bp && !numericErrors.diastolic_bp &&
+            Number.isFinite(s) && Number.isFinite(d) && s <= d
+        ) {
+            numericErrors.diastolic_bp = "Diastolic BP must be lower than systolic BP";
+        }
+        if (Object.keys(numericErrors).length > 0) {
+            setVitalsErrors(numericErrors);
+            toast.error(Object.values(numericErrors)[0]);
+            return;
+        }
+        setVitalsErrors({});
         setSaving(true);
         try {
             await service.addVitals(clinicId, id, vitalsForm, vitalsNotes || null, user.id);
@@ -293,14 +323,22 @@ export default function AdmissionDetailPage() {
                         <div className="rounded-xl border bg-white p-4 space-y-3">
                             <h4 className="text-xs font-semibold">Record Vital Signs</h4>
                             <div className="grid gap-2 sm:grid-cols-3">
-                                {VITAL_FIELDS.map(f => (
-                                    <div key={f.key}>
-                                        <label className="text-[10px] font-medium text-muted-foreground uppercase">{f.label} ({f.unit})</label>
-                                        <input type="number" step="any" value={vitalsForm[f.key] || ""} onChange={e => handleVitalsChange(f.key, e.target.value)}
-                                            placeholder={f.unit}
-                                            className="mt-1 w-full rounded-lg border bg-white px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/20" />
-                                    </div>
-                                ))}
+                                {VITAL_FIELDS.map(f => {
+                                    const range = VITAL_RANGES[f.key];
+                                    return (
+                                        <div key={f.key}>
+                                            <label className="text-[10px] font-medium text-muted-foreground uppercase">{f.label} ({f.unit})</label>
+                                            <input type="number" inputMode="decimal" step="any"
+                                                min={range?.min} max={range?.max}
+                                                value={vitalsForm[f.key] || ""}
+                                                onChange={e => handleVitalsChange(f.key, e.target.value)}
+                                                aria-invalid={vitalsErrors[f.key] ? "true" : undefined}
+                                                placeholder={f.unit}
+                                                className={`mt-1 w-full rounded-lg border bg-white px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${vitalsErrors[f.key] ? "border-red-400" : ""}`} />
+                                            {vitalsErrors[f.key] && <p className="mt-1 text-xs text-destructive">{vitalsErrors[f.key]}</p>}
+                                        </div>
+                                    );
+                                })}
                             </div>
                             <div>
                                 <label className="text-[10px] font-medium text-muted-foreground uppercase">Notes</label>

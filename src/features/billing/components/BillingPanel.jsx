@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Trash2, Printer, CreditCard, FileText, Download, CheckCircle2, AlertCircle, Shield, Pill, Beaker, Stethoscope, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { insuranceClaimSchema, toFieldErrors } from "@/features/billing/schemas/billing.schema";
 import { TAX_CLASSES } from "@/features/insurance/services/insurance.service";
 
 const escapeHtml = (str) => {
@@ -43,6 +44,8 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
     const [showPayment, setShowPayment] = useState(null);
     const [showInsurance, setShowInsurance] = useState(null);
     const [saving, setSaving] = useState(false);
+const [paymentErrors, setPaymentErrors] = useState({});
+const [claimErrors, setClaimErrors] = useState({});
 
     const [items, setItems] = useState([{ description: "", quantity: 1, unit_price: 0, service_catalog_id: null, tax_classification: "D" }]);
     const [notes, setNotes] = useState("");
@@ -139,20 +142,28 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
 
     const handlePayment = useCallback(async (invoiceId) => {
         const inv = invoices.find(i => i.id === invoiceId);
+        const amount = showPayment?.amount ?? 0;
+        if (!Number.isFinite(amount) || amount <= 0) {
+            setPaymentErrors((prev) => ({ ...prev, amount: "Enter an amount greater than zero" }));
+            toast.error("Enter a valid payment amount");
+            return;
+        }
         if (inv) {
             const paid = (inv.patient_payments || []).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
             const outstanding = inv.total - paid;
-            if ((showPayment?.amount || 0) > outstanding + 0.01) {
-                toast.error(`Payment (${formatCurrency(showPayment.amount)}) exceeds outstanding balance (${formatCurrency(outstanding)})`);
+            if (amount > outstanding + 0.01) {
+                setPaymentErrors((prev) => ({ ...prev, amount: `Exceeds outstanding balance of ${formatCurrency(outstanding)}` }));
+                toast.error(`Payment (${formatCurrency(amount)}) exceeds outstanding balance (${formatCurrency(outstanding)})`);
                 return;
             }
         }
+        setPaymentErrors((prev) => ({ ...prev, amount: undefined }));
         setSaving(true);
         try {
             const paymentData = {
                 invoice_id: invoiceId,
                 patient_id: patientId,
-                amount: showPayment?.amount || 0,
+                amount,
                 payment_method: showPayment?.method || "cash",
                 transaction_reference: showPayment?.reference || null,
                 notes: null,
@@ -167,16 +178,33 @@ export function BillingPanel({ consultationId, patientId, clinicId, userId, serv
     }, [clinicId, patientId, userId, service, showPayment, load, invoices]);
 
     const handleInsuranceClaim = useCallback(async (invoiceId) => {
+        const total = invoices.find(i => i.id === invoiceId)?.total || 0;
+        const parsed = insuranceClaimSchema.safeParse({
+            patient_id: patientId,
+            invoice_id: invoiceId,
+            provider: insuranceData.provider || "",
+            policy_number: insuranceData.policy_number || "",
+            total_amount: total,
+            covered_amount: insuranceData.covered_amount,
+            co_pay_amount: insuranceData.co_pay_amount,
+        });
+        if (!parsed.success) {
+            setClaimErrors(toFieldErrors(parsed.error));
+            toast.error("Please correct the highlighted fields");
+            return;
+        }
+        setClaimErrors({});
         setSaving(true);
         try {
+            const blankToZero = (v) => (v === "" || v === undefined || v === null ? 0 : v);
             await service.createInsuranceClaim(clinicId, {
                 patient_id: patientId,
                 invoice_id: invoiceId,
-                provider: insuranceData.provider,
-                policy_number: insuranceData.policy_number || null,
-                total_amount: invoices.find(i => i.id === invoiceId)?.total || 0,
-                covered_amount: parseFloat(insuranceData.covered_amount) || 0,
-                co_pay_amount: parseFloat(insuranceData.co_pay_amount) || 0,
+                provider: parsed.data.provider || null,
+                policy_number: parsed.data.policy_number || null,
+                total_amount: total,
+                covered_amount: blankToZero(parsed.data.covered_amount),
+                co_pay_amount: blankToZero(parsed.data.co_pay_amount),
             }, userId);
             toast.success("Insurance claim created");
             setShowInsurance(null);
@@ -425,9 +453,15 @@ ${paymentsHtml ? `
                                             className="rounded-lg border bg-white px-2 py-1.5 text-xs outline-none">
                                             {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                                         </select>
-                                        <input type="number" value={showPayment.amount} onChange={(e) => setShowPayment(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                                            className="w-28 rounded-lg border bg-white px-2 py-1.5 text-xs outline-none text-right" placeholder="Amount" />
+                                        <div>
+                                            <input type="number" inputMode="decimal" min="0" step="any" value={showPayment.amount}
+                                                onChange={(e) => setShowPayment(prev => ({ ...prev, amount: e.target.value === "" ? "" : parseFloat(e.target.value) }))}
+                                                aria-invalid={paymentErrors.amount ? "true" : undefined}
+                                                className={`w-28 rounded-lg border bg-white px-2 py-1.5 text-xs outline-none text-right ${paymentErrors.amount ? "border-red-400" : ""}`} placeholder="Amount" />
+                                            {paymentErrors.amount && <p className="mt-0.5 text-[10px] text-destructive">{paymentErrors.amount}</p>}
+                                        </div>
                                         <input value={showPayment.reference} onChange={(e) => setShowPayment(prev => ({ ...prev, reference: e.target.value }))}
+                                            maxLength={100}
                                             className="flex-1 rounded-lg border bg-white px-2 py-1.5 text-xs outline-none" placeholder="Transaction ref (optional)" />
                                         <button onClick={() => handlePayment(inv.id)} disabled={saving} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
                                             {saving ? <Loader2 className="size-3 animate-spin" /> : <CheckCircle2 className="size-3" />} Pay
@@ -445,10 +479,20 @@ ${paymentsHtml ? `
                                         {patientInsurance?.valid_until && <p className="text-muted-foreground">Valid until: {new Date(patientInsurance.valid_until).toLocaleDateString()}</p>}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <input type="number" value={insuranceData.covered_amount} onChange={(e) => setInsuranceData(prev => ({ ...prev, covered_amount: e.target.value }))}
-                                            className="w-24 rounded-lg border bg-white px-2 py-1.5 text-xs outline-none text-right" placeholder="Covered" />
-                                        <input type="number" value={insuranceData.co_pay_amount} onChange={(e) => setInsuranceData(prev => ({ ...prev, co_pay_amount: e.target.value }))}
-                                            className="w-24 rounded-lg border bg-white px-2 py-1.5 text-xs outline-none text-right" placeholder="Co-pay" />
+                                        <div>
+                                            <input type="number" inputMode="decimal" min="0" step="any" value={insuranceData.covered_amount}
+                                                onChange={(e) => { setClaimErrors(p => ({ ...p, covered_amount: undefined })); setInsuranceData(prev => ({ ...prev, covered_amount: e.target.value })); }}
+                                                aria-invalid={claimErrors.covered_amount ? "true" : undefined}
+                                                className={`w-24 rounded-lg border bg-white px-2 py-1.5 text-xs outline-none text-right ${claimErrors.covered_amount ? "border-red-400" : ""}`} placeholder="Covered" />
+                                            {claimErrors.covered_amount && <p className="mt-0.5 text-[10px] text-destructive">{claimErrors.covered_amount}</p>}
+                                        </div>
+                                        <div>
+                                            <input type="number" inputMode="decimal" min="0" step="any" value={insuranceData.co_pay_amount}
+                                                onChange={(e) => { setClaimErrors(p => ({ ...p, co_pay_amount: undefined })); setInsuranceData(prev => ({ ...prev, co_pay_amount: e.target.value })); }}
+                                                aria-invalid={claimErrors.co_pay_amount ? "true" : undefined}
+                                                className={`w-24 rounded-lg border bg-white px-2 py-1.5 text-xs outline-none text-right ${claimErrors.co_pay_amount ? "border-red-400" : ""}`} placeholder="Co-pay" />
+                                            {claimErrors.co_pay_amount && <p className="mt-0.5 text-[10px] text-destructive">{claimErrors.co_pay_amount}</p>}
+                                        </div>
                                         <button onClick={() => handleInsuranceClaim(inv.id)} disabled={saving} className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50">
                                             {saving ? <Loader2 className="size-3 animate-spin" /> : <Shield className="size-3" />} Submit Claim
                                         </button>

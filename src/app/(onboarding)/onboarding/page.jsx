@@ -16,6 +16,7 @@ import { ConversionTrigger } from "@/features/onboarding/components/conversion-t
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { optionalPhoneSchema } from "@/lib/validation";
 
 const revenue = getDemoService().getEstimatedLostRevenue();
 
@@ -247,10 +248,19 @@ function MissionOnePatient({ clinicId, onNext }) {
 
   const handleAdd = async () => {
     if (!form.name || !clinicId) return;
+    const age = form.age === "" ? null : Number(form.age);
+    if (form.age !== "" && (!Number.isInteger(age) || age < 0 || age > 130)) {
+      toast.error("Enter an age between 0 and 130");
+      return;
+    }
+    if (form.phone && !optionalPhoneSchema.safeParse(form.phone).success) {
+      toast.error("Enter a valid phone number");
+      return;
+    }
     setSaving(true);
     try {
       const patientPhone = form.phone || "Unknown";
-      const dob = form.age ? `${new Date().getFullYear() - Number(form.age)}-01-01` : null;
+      const dob = age !== null ? `${new Date().getFullYear() - age}-01-01` : null;
       const { error } = await supabase.rpc("create_patient", {
         p_clinic_id: clinicId, p_full_name: form.name, p_phone: patientPhone,
         p_created_by: user?.id, p_date_of_birth: dob, p_gender: null, p_email: null,
@@ -292,7 +302,7 @@ function MissionOnePatient({ clinicId, onNext }) {
         </div>
         <div>
           <label className="text-xs font-medium text-slate-500">Age (optional)</label>
-          <input type="number" value={form.age} onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))}
+          <input type="number" inputMode="numeric" min="0" max="130" step="1" value={form.age} onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))}
             placeholder="35"
             className="mt-1 w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
           />

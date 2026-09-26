@@ -6,6 +6,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getInvestigationService } from "@/features/investigations/services/investigation.service";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { validateInvestigationResult } from "@/features/investigations/schemas/investigation.schema";
 
 const STATUS_OPTIONS = [
     { value: "", label: "All" },
@@ -32,19 +33,26 @@ function ResultEntryForm({ investigation, onSave, onCancel }) {
     const [resultNotes, setResultNotes] = useState(investigation.result_notes || "");
     const [status, setStatus] = useState("completed");
     const [saving, setSaving] = useState(false);
+    const [errors, setErrors] = useState({});
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const result = validateInvestigationResult({
+            result_value: resultValue,
+            result_unit: resultUnit,
+            reference_range: referenceRange,
+            result_notes: resultNotes,
+            status,
+            is_abnormal: isAbnormal,
+        });
+        if (!result.ok) {
+            setErrors(result.errors);
+            return;
+        }
+        setErrors({});
         setSaving(true);
         try {
-            await onSave(investigation.id, {
-                result_value: resultValue,
-                result_unit: resultUnit,
-                reference_range: referenceRange,
-                is_abnormal: isAbnormal,
-                result_notes: resultNotes,
-                status,
-            });
+            await onSave(investigation.id, result.data);
             toast.success("Result saved");
             onCancel();
         } catch (err) {
@@ -54,23 +62,41 @@ function ResultEntryForm({ investigation, onSave, onCancel }) {
         }
     };
 
+    const clearError = (key) => setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+
     return (
-        <form onSubmit={handleSubmit} className="rounded-xl border bg-white p-4 space-y-3">
+        <form onSubmit={handleSubmit} className="rounded-xl border bg-white p-4 space-y-3" noValidate>
             <h4 className="text-sm font-semibold">{investigation.test_name}</h4>
             {investigation.category && <p className="text-[10px] text-muted-foreground uppercase">{investigation.category}</p>}
 
             <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                     <label className="text-[10px] font-medium text-muted-foreground uppercase">Result Value</label>
-                    <input value={resultValue} onChange={(e) => setResultValue(e.target.value)} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. 5.2" />
+                    <input
+                        value={resultValue}
+                        onChange={(e) => { clearError("result_value"); setResultValue(e.target.value); }}
+                        maxLength={200}
+                        aria-invalid={errors.result_value ? "true" : undefined}
+                        className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 ${errors.result_value ? "border-red-400" : ""}`}
+                        placeholder="e.g. 5.2"
+                    />
+                    {errors.result_value && <p className="mt-1 text-xs text-destructive">{errors.result_value}</p>}
                 </div>
                 <div>
                     <label className="text-[10px] font-medium text-muted-foreground uppercase">Unit</label>
-                    <input value={resultUnit} onChange={(e) => setResultUnit(e.target.value)} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. mmol/L" />
+                    <input value={resultUnit} onChange={(e) => setResultUnit(e.target.value)} maxLength={50} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. mmol/L" />
                 </div>
                 <div>
                     <label className="text-[10px] font-medium text-muted-foreground uppercase">Reference Range</label>
-                    <input value={referenceRange} onChange={(e) => setReferenceRange(e.target.value)} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. 3.5-5.5" />
+                    <input
+                        value={referenceRange}
+                        onChange={(e) => { clearError("reference_range"); setReferenceRange(e.target.value); }}
+                        maxLength={100}
+                        aria-invalid={errors.reference_range ? "true" : undefined}
+                        className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 ${errors.reference_range ? "border-red-400" : ""}`}
+                        placeholder="e.g. 3.5-5.5"
+                    />
+                    {errors.reference_range && <p className="mt-1 text-xs text-destructive">{errors.reference_range}</p>}
                 </div>
             </div>
 
@@ -91,7 +117,7 @@ function ResultEntryForm({ investigation, onSave, onCancel }) {
 
             <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase">Notes</label>
-                <textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="Additional notes..." />
+                <textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} maxLength={2000} rows={2} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" placeholder="Additional notes..." />
             </div>
 
             <div className="flex justify-end gap-2">

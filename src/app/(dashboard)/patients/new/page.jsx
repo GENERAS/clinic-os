@@ -109,7 +109,7 @@ export default function NewPatientPage() {
                 <label htmlFor="date_of_birth" className="mb-1.5 block text-sm font-medium">
                   Date of Birth
                 </label>
-                <input id="date_of_birth" type="date" {...register("date_of_birth")} disabled={saving} className="w-full rounded-lg border bg-background px-3 py-2 text-sm disabled:opacity-60"/>
+                <input id="date_of_birth" type="date" max={new Date().toISOString().slice(0, 10)} {...register("date_of_birth")} disabled={saving} className="w-full rounded-lg border bg-background px-3 py-2 text-sm disabled:opacity-60"/>
               </div>
             </div>
 

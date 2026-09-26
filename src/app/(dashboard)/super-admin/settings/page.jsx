@@ -161,6 +161,14 @@ false
 }  async function handleWhatsappSave(
 
 ) {
+    if (!Number.isInteger(whatsappDefaults.retry_count) || whatsappDefaults.retry_count < 0 || whatsappDefaults.retry_count > 20) {
+ toast.error("Retry count must be a whole number between 0 and 20");
+ return;
+    }
+    if (!Number.isInteger(whatsappDefaults.retry_delay_minutes) || whatsappDefaults.retry_delay_minutes < 0 || whatsappDefaults.retry_delay_minutes > 1440) {
+ toast.error("Retry delay must be a whole number of minutes between 0 and 1440");
+ return;
+    }
     setSaving(
 true
 );
@@ -193,6 +201,14 @@ false
 }  async function savePlan(
 planId, field, value
 ) {
+    if (field === "price_monthly" && (!Number.isFinite(value) || value < 0)) {
+ toast.error("Price must be zero or more");
+ return;
+    }
+    if (field === "max_staff" && (!Number.isInteger(value) || value < 1)) {
+ toast.error("Max staff must be a whole number of at least 1");
+ return;
+    }
     setSaving(
 true
 );
@@ -268,7 +284,7 @@ plan.id
 plan.name
 }</h3>                  <p className="text-xs   text-slate-500">{
 plan.description
-}</p>                </div>                <div className="flex items-center gap-2">                  <label className="text-xs   text-slate-500">Price</label>                  <input type="number" defaultValue={
+}</p>                </div>                <div className="flex items-center gap-2">                  <label className="text-xs   text-slate-500">Price</label>                  <input type="number" min="0" step="any" defaultValue={
 plan.price_monthly
 }                    onBlur={
 (
@@ -284,7 +300,7 @@ plan.whatsapp_enabled
 e) => savePlan(
 plan.id, "whatsapp_enabled", e.target.checked
 )
-}                    className="size-3.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />                  WhatsApp                </label>                <label>                  Max staff:                  <input type="number" defaultValue={
+}                    className="size-3.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500" />                  WhatsApp                </label>                <label>                  Max staff:                  <input type="number" min="1" step="1" inputMode="numeric" defaultValue={
 plan.max_staff
 }                    onBlur={
 (
@@ -302,7 +318,7 @@ handleWhatsappSave
 saving
 }            className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-50">            {
 saving ? "Saving..." : "Save"
-}          </button>        </div>        <div className="grid gap-3 sm:grid-cols-2">          <div>            <label className="text-xs font-medium   text-slate-500">Retry Count</label>            <input type="number" value={
+}          </button>        </div>        <div className="grid gap-3 sm:grid-cols-2">          <div>            <label className="text-xs font-medium   text-slate-500">Retry Count</label>            <input type="number" min="0" max="20" step="1" inputMode="numeric" value={
 whatsappDefaults.retry_count
 }              onChange={
 (
@@ -318,7 +334,7 @@ e.target.value
 )
 }              className="mt-1 w-full rounded-lg border bg-white px-3 py-1.5 text-sm outline-none focus:border-primary" />          </div>          <div>            <label className="text-xs font-medium   text-slate-500">Retry Delay (
 minutes
-)</label>            <input type="number" value={
+)</label>            <input type="number" min="0" max="1440" step="1" inputMode="numeric" value={
 whatsappDefaults.retry_delay_minutes
 }              onChange={
 (

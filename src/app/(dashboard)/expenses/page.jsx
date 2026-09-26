@@ -8,6 +8,7 @@ import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getExpenseService, EXPENSE_CATEGORIES, EXPENSE_PAYMENT_METHODS } from "@/features/accounting/services/expense.service";
 import { toast } from "sonner";
 import { handleApiError } from "@/lib/errors";
+import { expenseSchema, toFieldErrors } from "@/features/billing/schemas/billing.schema";
 
 const CATEGORY_COLORS = {
   rent: "bg-indigo-50 text-indigo-700",
@@ -37,6 +38,7 @@ export default function ExpensesPage() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+const [errors, setErrors] = useState({});
   const [categoryFilter, setCategoryFilter] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -67,20 +69,32 @@ export default function ExpensesPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleSave = useCallback(async () => {
-    if (!clinicId || !form.category || !form.description || !form.amount) {
-      toast.error("Category, description, and amount are required");
+    if (!clinicId) return;
+    const parsed = expenseSchema.safeParse({
+      category: form.category,
+      description: form.description,
+      amount: form.amount,
+      expense_date: form.expense_date || "",
+      payment_method: form.payment_method || "",
+      reference: form.reference || "",
+      notes: form.notes || "",
+    });
+    if (!parsed.success) {
+      setErrors(toFieldErrors(parsed.error));
+      toast.error(parsed.error.issues[0]?.message || "Please correct the highlighted fields");
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       const payload = {
-        category: form.category,
-        description: form.description,
-        amount: parseFloat(form.amount),
-        expense_date: form.expense_date || new Date().toISOString().split("T")[0],
-        payment_method: form.payment_method,
-        reference: form.reference || null,
-        notes: form.notes || null,
+        category: parsed.data.category,
+        description: parsed.data.description,
+        amount: parsed.data.amount,
+        expense_date: parsed.data.expense_date || new Date().toISOString().split("T")[0],
+        payment_method: parsed.data.payment_method || null,
+        reference: parsed.data.reference || null,
+        notes: parsed.data.notes || null,
       };
       if (editing) {
         await service.updateExpense(clinicId, editing.id, payload);
@@ -183,8 +197,11 @@ export default function ExpensesPage() {
                   </div>
                   <div>
                     <label className="text-[10px] font-medium text-muted-foreground uppercase">Amount (RWF) *</label>
-                    <input type="number" value={form.amount} onChange={e => setForm(prev => ({ ...prev, amount: e.target.value }))}
-                      className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20" placeholder="0" />
+                    <input type="number" inputMode="decimal" min="0" step="any" value={form.amount}
+                      onChange={e => { setErrors(p => ({ ...p, amount: undefined })); setForm(prev => ({ ...prev, amount: e.target.value })); }}
+                      aria-invalid={errors.amount ? "true" : undefined}
+                      className={`mt-1 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/20 ${errors.amount ? "border-red-400" : ""}`} placeholder="0" />
+                    {errors.amount && <p className="mt-1 text-xs text-destructive">{errors.amount}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] font-medium text-muted-foreground uppercase">Date</label>

@@ -56,13 +56,13 @@ export function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen w-full overflow-x-hidden bg-slate-50">
+    <div className="flex h-screen h-dvh w-full overflow-hidden bg-slate-50">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white text-slate-900 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60",
+        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white text-slate-900 transition-transform duration-300 lg:static lg:translate-x-0 lg:w-60 lg:h-full",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-200 px-3 lg:px-4 min-w-0">
@@ -72,13 +72,13 @@ export function AdminLayout() {
           <span className="text-sm font-bold tracking-tight text-slate-900 truncate">ClinicOS</span>
         </div>
 
-        <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-thin">
+        <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-3 scrollbar-thin">
           {navItems.map((item) => (
             <NavItem key={item.href} item={item} onClose={() => setSidebarOpen(false)} />
           ))}
         </nav>
 
-        <div className="border-t border-slate-200 px-2 py-2 space-y-0.5">
+        <div className="shrink-0 border-t border-slate-200 px-2 py-2 space-y-0.5">
           <Link
             to="/admin/profile"
             onClick={() => setSidebarOpen(false)}
@@ -105,8 +105,8 @@ export function AdminLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center gap-2 sm:gap-4 border-b border-slate-200 bg-white px-3 sm:px-4 lg:px-6 sticky top-0 z-30">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center gap-2 sm:gap-4 border-b border-slate-200 bg-white px-3 sm:px-4 lg:px-6 z-30">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden flex size-10 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors shrink-0">
             <Menu className="size-5" />
           </button>
@@ -133,11 +133,11 @@ export function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 w-full max-w-full">
+        <main className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 w-full max-w-full">
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-200 bg-white px-4 sm:px-6 py-3 text-center text-xs text-slate-400">
+        <footer className="shrink-0 border-t border-slate-200 bg-white px-4 sm:px-6 py-3 text-center text-xs text-slate-400">
           ClinicOS &copy; {new Date().getFullYear()}
         </footer>
       </div>
