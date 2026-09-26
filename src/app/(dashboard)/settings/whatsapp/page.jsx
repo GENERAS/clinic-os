@@ -6,7 +6,6 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { ConnectionStatusCard } from "@/features/whatsapp/components/ConnectionStatusCard";
 import { ReminderSettingsCard } from "@/features/whatsapp/components/ReminderSettingsCard";
 import { TemplateEditor } from "@/features/whatsapp/components/TemplateEditor";
-import { ServicesEditor } from "@/features/whatsapp/components/ServicesEditor";
 import { getWhatsAppService } from "@/features/whatsapp/services/whatsapp.service";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 
@@ -42,8 +41,6 @@ export default function WhatsAppSettingsPage() {
     const [connectionStatus, setConnectionStatus] = useState(null);
     const [templates, setTemplates] = useState([]);
     const [editingTemplate, setEditingTemplate] = useState(null);
-    const [services, setServices] = useState([]);
-    const [editingService, setEditingService] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
@@ -57,18 +54,16 @@ export default function WhatsAppSettingsPage() {
     const loadData = useCallback(async () => {
         if (!clinicId) return;
         try {
-            const [settingsData, credsData, statusData, templatesData, servicesData] = await Promise.all([
+            const [settingsData, credsData, statusData, templatesData] = await Promise.all([
                 whatsapp.getReminderSettings(clinicId),
                 whatsapp.getCredentials(clinicId),
                 whatsapp.getConnectionStatus(clinicId),
                 whatsapp.getTemplates(clinicId),
-                whatsapp.getClinicServices(clinicId),
             ]);
             setSettings(settingsData);
             setCredentials(credsData);
             setConnectionStatus(statusData);
             setTemplates(templatesData);
-            setServices(servicesData);
             if (credsData) {
                 setCredForm({
                     access_token: "",
@@ -149,27 +144,6 @@ export default function WhatsAppSettingsPage() {
         setEditingTemplate(null);
         const templatesData = await whatsapp.getTemplates(clinicId);
         setTemplates(templatesData);
-    };
-
-    const handleSaveService = async (values) => {
-        if (!clinicId || !user) return;
-        if (editingService?.id) {
-            await whatsapp.updateService(clinicId, editingService.id, values, user.id);
-        } else {
-            await whatsapp.createService(clinicId, values, user.id);
-        }
-        setEditingService(null);
-        const servicesData = await whatsapp.getClinicServices(clinicId);
-        setServices(servicesData);
-    };
-
-    const handleDeleteService = async (serviceId) => {
-        if (!clinicId || !user) return;
-        if (!window.confirm("Delete this service? Patients will no longer see it in the WhatsApp menu.")) return;
-        await whatsapp.deleteService(clinicId, serviceId, user.id);
-        setSuccessMsg("Service deleted.");
-        const servicesData = await whatsapp.getClinicServices(clinicId);
-        setServices(servicesData);
     };
 
     if (!clinicId) return null;
@@ -381,70 +355,6 @@ export default function WhatsAppSettingsPage() {
                         ))}
                         {templates.length === 0 && (
                             <p className="py-6 text-center text-sm text-slate-500">No templates yet. Create your first template.</p>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-900">Services &amp; Prices</h3>
-                        <p className="text-xs text-slate-500">Shown to patients on WhatsApp when they ask about services ("3") or book an appointment</p>
-                    </div>
-                    {!editingService && (
-                        <button onClick={() => setEditingService({
-                            id: "", name: "", description: "", price: null, duration_minutes: 30, is_active: true, sort_order: services.length,
-                        })} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500">
-                            New Service
-                        </button>
-                    )}
-                </div>
-
-                {editingService ? (
-                    <SectionCard title={editingService.id ? "Edit Service" : "Add Service"}>
-                        <ServicesEditor
-                            service={editingService.id ? editingService : null}
-                            onSave={handleSaveService}
-                            onCancel={() => setEditingService(null)}
-                        />
-                    </SectionCard>
-                ) : (
-                    <div className="space-y-3">
-                        {services.map((svc) => (
-                            <div key={svc.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h4 className="text-sm font-medium text-slate-900">{svc.name}</h4>
-                                        <p className="text-xs text-slate-500">
-                                            {svc.price != null ? `${new Intl.NumberFormat().format(svc.price)} RWF` : "Call for pricing"}
-                                            {svc.duration_minutes ? ` — ${svc.duration_minutes} min` : ""}
-                                            {svc.description ? ` — ${svc.description}` : ""}
-                                            {" · "}
-                                            {svc.is_active ? (
-                                                <span className="text-emerald-600">Active</span>
-                                            ) : (
-                                                <span className="text-slate-400">Inactive</span>
-                                            )}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => setEditingService(svc)}
-                                            className="text-xs font-medium text-teal-600 hover:text-teal-500">
-                                            Edit
-                                        </button>
-                                        <button onClick={() => handleDeleteService(svc.id)}
-                                            className="text-xs font-medium text-red-600 hover:text-red-500">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        {services.length === 0 && (
-                            <p className="py-6 text-center text-sm text-slate-500">
-                                No services yet. Add your first service so patients can see prices and book by service.
-                            </p>
                         )}
                     </div>
                 )}
